@@ -1,3 +1,2 @@
-# Bachelor thesis
-## Data Science & Artificial Intelligence, Maastricht University
-### Yannick Damoiseaux
+# Bachelor thesis, Data Science & Artificial Intelligence, Maastricht University
+## Yannick Damoiseaux
