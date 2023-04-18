@@ -3,8 +3,8 @@ import java.util.Random;
 public class GraphGenerator {
     public static void main(String[] args) {
         GraphGenerator graphGenerator = new GraphGenerator();
-        Graph graph = graphGenerator.generateGraph(20, 80, 20, 5, 5);
-        graph.saveToFile("test.json");
+        Graph graph = graphGenerator.generateGraph(9, 18, 9, 5, 5);
+        graph.saveToFile("test4.json");
     }
 
     private final Random rand = new Random(0);
@@ -12,7 +12,7 @@ public class GraphGenerator {
     private Graph generateGraph(int nrVertices, int nrEdges, int nrPoints, int width, int height) {
         Edge[] edges = generateEdges(nrVertices, nrEdges);
         Point[] points = generatePoints(nrPoints, width, height);
-        return new Graph(nrVertices, edges, points);
+        return new Graph(nrVertices, edges, points, width, height);
     }
 
     private Edge[] generateEdges(int nrVertices, int nrEdges) {

@@ -16,6 +16,8 @@ public class GraphReader {
     public int getNrOfVertices() {
         return ((JSONArray) jsonObject.get("nodes")).size();
     }
+    public int getWidth() { return (int)(long) jsonObject.get("width"); }
+    public int getHeight() { return (int)(long) jsonObject.get("height"); }
 
     public Edge[] getEdges() {
         JSONArray edges_read = (JSONArray) jsonObject.get("edges");

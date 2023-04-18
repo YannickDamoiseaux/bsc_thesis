@@ -14,25 +14,33 @@ public class Graph {
     private final int nrVertices;
     private final Edge[] edges;
     private final Point[] points;
+    private final int width;
+    private final int height;
     public Graph(FileReader fileReader) {
         try {
             GraphReader graphReader = new GraphReader(fileReader);
             this.nrVertices = graphReader.getNrOfVertices();
+            this.width = graphReader.getWidth();
+            this.height = graphReader.getHeight();
             this.edges = graphReader.getEdges();
             this.points = graphReader.getPoints();
         } catch (IOException | ParseException e) {
             throw new RuntimeException(e);
         }
     }
-    public Graph(int nrVertices, Edge[] edges, Point[] points) {
+    public Graph(int nrVertices, Edge[] edges, Point[] points, int width, int height) {
         this.nrVertices = nrVertices;
         this.edges = edges;
         this.points = points;
+        this.width = width;
+        this.height = height;
     }
 
     public int getNrOfVertices() { return nrVertices; }
     public int getNrOfPoints() { return points.length; }
     public int getNrOfEdges() { return edges.length; }
+    public int getWidth() { return width; }
+    public int getHeight() { return height; }
     public Edge[] getEdges() { return edges; }
     public Point[] getPoints() { return points; }
 
@@ -65,6 +73,8 @@ public class Graph {
         jsonFileObject.put("nodes", nodes);
         jsonFileObject.put("edges", edges);
         jsonFileObject.put("points", points);
+        jsonFileObject.put("width", width);
+        jsonFileObject.put("height", height);
 
         try (FileWriter file = new FileWriter("src/main/resources/"+fileName))
         {

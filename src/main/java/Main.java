@@ -3,6 +3,6 @@ import java.net.URISyntaxException;
 
 public class Main {
     public static void main(String[] args) throws IOException, URISyntaxException {
-        new ExactILP("test.json").solve();
+        new ExactBIP("test4.json").solve();
     }
 }
