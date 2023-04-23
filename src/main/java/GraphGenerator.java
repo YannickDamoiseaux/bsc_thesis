@@ -3,8 +3,8 @@ import java.util.Random;
 public class GraphGenerator {
     public static void main(String[] args) {
         GraphGenerator graphGenerator = new GraphGenerator();
-        Graph graph = graphGenerator.generateGraph(9, 18, 9, 5, 5);
-        graph.saveToFile("test4.json");
+        Graph graph = graphGenerator.generateGraph(15, 45, 15, 6, 6);
+        graph.saveToFile("test1.json");
     }
 
     private final Random rand = new Random(0);
