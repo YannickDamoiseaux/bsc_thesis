@@ -16,7 +16,7 @@ public class ExactBIP implements Solver {
         this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
     }
 
-    public void solve() {
+    public double solve() {
         try(IloCplex cplex = new IloCplex()) {
             IloIntVar[][] vars = new IloIntVar[graph.getNrOfVertices()][graph.getNrOfPoints()];
             for (int i = 0; i < graph.getNrOfVertices(); i++) {
@@ -68,6 +68,7 @@ public class ExactBIP implements Solver {
             //IloLinearIntExpr[] objExpressions = new IloLinearIntExpr[((int)(graph.getNrOfEdges() * graph.getNrOfPoints() * (graph.getNrOfPoints()-1) * (0.5*(graph.getNrOfEdges()-1)))) * (graph.getNrOfPoints()-2) * (graph.getNrOfPoints()-3)];
             LinkedList<IloLinearIntExpr> objExpressions = new LinkedList<>();
             boolean[][][][][][] crossings = getCrossings();
+            //System.out.println(crossings[1][8][0][3][6][3]);
             int count = 0;
             for (int e_1 = 0; e_1 < graph.getNrOfEdges(); e_1++) {
                 Edge edge_1 = graph.getEdges()[e_1];
@@ -123,16 +124,22 @@ public class ExactBIP implements Solver {
             cplex.addMinimize(cplex.sum(objExpressions.toArray(new IloLinearIntExpr[0])));
             // solve and retrieve optimal solution
             if (cplex.solve()) {
-                System.out.println("Optimal value = " + cplex.getObjValue());
-                System.out.println(Arrays.toString(cplex.getValues(vars[0])));
+                /*System.out.println(Arrays.toString(cplex.getValues(vars[0])));
                 System.out.println(Arrays.toString(cplex.getValues(vars[1])));
                 System.out.println(Arrays.toString(cplex.getValues(vars[2])));
                 System.out.println(Arrays.toString(cplex.getValues(vars[3])));
-            }
+                System.out.println(Arrays.toString(cplex.getValues(vars[4])));
+                System.out.println(Arrays.toString(cplex.getValues(vars[5])));
+                System.out.println(Arrays.toString(cplex.getValues(vars[6])));
+                System.out.println(Arrays.toString(cplex.getValues(vars[7])));
+                System.out.println(Arrays.toString(cplex.getValues(vars[8])));*/
 
+                return cplex.getObjValue();
+            }
         } catch (IloException e) {
             e.printStackTrace();
         }
+        return -1;
     }
 
     private boolean[][][][][][] getCrossings() {

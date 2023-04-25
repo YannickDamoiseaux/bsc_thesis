@@ -18,7 +18,7 @@ public class ExactILP implements Solver {
     public ExactILP(String src) throws URISyntaxException, FileNotFoundException {
         this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
     }
-    public void solve() {
+    public double solve() {
         try (IloCplex cplex = new IloCplex()) {
             IloIntVar[][][] points = new IloIntVar[graph.getNrOfVertices()][graph.getNrOfPoints()][2];
             IloIntVar[][] vertices = new IloIntVar[graph.getNrOfVertices()][2];
@@ -144,15 +144,12 @@ public class ExactILP implements Solver {
             cplex.addMinimize(cplex.sum(cVar.toArray(new IloIntVar[0])));
             System.out.println(cplex.getObjective());
             if (cplex.solve()) {
-                System.out.println("Optimal value = " + cplex.getObjValue());
-                System.out.println(Arrays.toString(cplex.getValues(vertices[0])));
-                System.out.println(Arrays.toString(cplex.getValues(vertices[1])));
-                System.out.println(Arrays.toString(cplex.getValues(vertices[2])));
-                System.out.println(Arrays.toString(cplex.getValues(vertices[3])));
+                return cplex.getObjValue();
             }
         } catch (IloException e) {
             e.printStackTrace();
         }
+        return -1;
     }
 
     private IloIntVar[][] area_vars;

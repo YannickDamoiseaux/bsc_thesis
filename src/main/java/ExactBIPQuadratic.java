@@ -16,7 +16,7 @@ public class ExactBIPQuadratic implements Solver {
         this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
     }
 
-    public void solve() {
+    public double solve() {
         try(IloCplex cplex = new IloCplex()) {
             IloIntVar[][] vars = new IloIntVar[graph.getNrOfVertices()][graph.getNrOfPoints()];
             for (int i = 0; i < graph.getNrOfVertices(); i++) {
@@ -92,17 +92,13 @@ public class ExactBIPQuadratic implements Solver {
             cplex.addMinimize(cplex.sum(objExpressions.toArray(new IloQuadIntExpr[0])));
             // solve and retrieve optimal solution
             if (cplex.solve()) {
-                System.out.println("Optimal value = " + cplex.getObjValue());
-                System.out.println(cplex.getObjective().getExpr().toString());
-                System.out.println(Arrays.toString(cplex.getValues(vars[0])));
-                System.out.println(Arrays.toString(cplex.getValues(vars[1])));
-                System.out.println(Arrays.toString(cplex.getValues(vars[2])));
-                System.out.println(Arrays.toString(cplex.getValues(vars[3])));
+                return cplex.getObjValue();
             }
 
         } catch (IloException e) {
             e.printStackTrace();
         }
+        return -1;
     }
 
     private boolean[][][][][][] getCrossings() {

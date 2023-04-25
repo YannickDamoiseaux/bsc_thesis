@@ -1,3 +1,3 @@
 public interface Solver {
-    public void solve();
+    public double solve();
 }

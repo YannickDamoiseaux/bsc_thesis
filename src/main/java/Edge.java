@@ -8,4 +8,5 @@ public class Edge {
     public int v1() { return v1; }
     public int v2() { return v2; }
     public String toString() { return "edge={" + v1 + ", " + v2 + "}"; }
+    public boolean equals(Edge edge) { return v1 == edge.v1() && v2 == edge.v2(); }
 }
