@@ -4,7 +4,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class ExactAnchorsNoRounding {
+public class ExactAnchorsNoRounding implements Solver {
     private final Graph graph;
 
     public ExactAnchorsNoRounding(String src) throws URISyntaxException, FileNotFoundException {
@@ -13,21 +13,6 @@ public class ExactAnchorsNoRounding {
     }
 
     public double solve() {
-        /*LinkedList<Integer> vertices = new LinkedList<>();
-        for (int i = 0; i < graph.getNrOfVertices(); i++) {
-            vertices.add(i);
-        }*/
-
-        /*int[] p   = new int[graph.getNrOfVertices()];     // permutation
-        int[] pi  = new int[graph.getNrOfVertices()];     // inverse permutation
-        int[] dir = new int[graph.getNrOfVertices()];     // direction = +1 or -1
-        for (int i = 0; i < graph.getNrOfVertices(); i++) {
-            dir[i] = -1;
-            p[i]  = i;
-            pi[i] = i;
-            vertexPointCombinations[i] = graph.getPoints()[i];
-        }*/
-
         vertexPointCombinations = new Point[graph.getNrOfVertices()];
         for (int i = 0; i < graph.getNrOfVertices(); i++) {
             vertexPointCombinations[i] = graph.getPoints()[i];
@@ -52,6 +37,7 @@ public class ExactAnchorsNoRounding {
         }
 
         i = 1;
+        // Source: https://www.quickperm.org/quickperm.php
         while(i < a.length) {
             if (p[i] < i) {
                 j = i % 2 * p[i];
@@ -72,8 +58,8 @@ public class ExactAnchorsNoRounding {
                 i++;
             }
         }
+
         return optimalCrossingNumber;
-        //return solveRecursively(0, p, pi, dir, new int[2], crossingNumberOld);
     }
 
     LinkedList<AnchorEdgeNew>[] layers;
@@ -116,7 +102,7 @@ public class ExactAnchorsNoRounding {
         vertexPointCombinations[swappedVertex1] = vertexPointCombinations[swappedVertex2];
         vertexPointCombinations[swappedVertex2] = temp;
 
-        LinkedList<Edge> edgesToRemove = new LinkedList<>();
+        ArrayList<Edge> edgesToRemove = new ArrayList<>();
         for (Edge edge : graph.getEdges()) {
             if (edge.v1() == swappedVertex1 || edge.v1() == swappedVertex2) edgesToRemove.add(edge);
             else if (edge.v2() == swappedVertex1 || edge.v2() == swappedVertex2) edgesToRemove.add(edge);
@@ -152,7 +138,7 @@ public class ExactAnchorsNoRounding {
             }
         }
 
-        //System.out.println(crossingNumberOld + " crossing(s) for anchor graph: " + Arrays.deepToString(layers) + " and combinations " + Arrays.toString(vertexPointCombinations));
+        if (crossingNumberOld == 8) System.out.println(crossingNumberOld + " crossing(s) for anchor graph: " + Arrays.deepToString(layers) + " and combinations " + Arrays.toString(vertexPointCombinations));
         vertexPointCombinationsOld = vertexPointCombinations.clone();
         return crossingNumberOld;
     }
@@ -241,62 +227,3 @@ public class ExactAnchorsNoRounding {
 }
 
 record AnchorEdgePackage(int x, AnchorEdgeNew anchorEdge) {}
-
-/*
-    private int solveRecursively(LinkedList<Point> points, LinkedList<Integer> vertices, Point[] vertexPointCombinations, LinkedList<Integer> verticesThatChanged, int optimalNrCrossings) {
-        if (!points.isEmpty() && !vertices.isEmpty()) {
-            LinkedList<Point> points_new = new LinkedList<>(points);
-            Point point = points_new.remove(0);
-            for (int vertexIdx = 0; vertexIdx < vertices.size(); vertexIdx++) {
-                vertexPointCombinations[vertices.get(vertexIdx)] = point;
-                LinkedList<Integer> vertices_new = new LinkedList<>(vertices);
-                vertices_new.remove(vertexIdx);
-                if (vertexIdx > 0) {
-                    verticesThatChanged = new LinkedList<>();
-                    verticesThatChanged.addAll(vertices);
-                }
-                int nrCrossings = solveRecursively(points_new, vertices_new, vertexPointCombinations, verticesThatChanged, optimalNrCrossings);
-                if (nrCrossings < optimalNrCrossings) {
-                    optimalNrCrossings = nrCrossings;
-                    if (nrCrossings == 0) return optimalNrCrossings;
-                }
-                verticesThatChanged = null;
-            }
-            return optimalNrCrossings;
-        }
-        else {
-            crossingNumberOld = calculateNumberOfCrossings(vertexPointCombinations, verticesThatChanged);
-            return crossingNumberOld;
-        }
-    }
-     */
-/*public double solveRecursively(int n, int[] p, int[] pi, int[] dir, int[] swappedVertices, double optimalNrCrossings) {
-        if (n >= p.length) {
-            return calculateNumberOfCrossings(swappedVertices);
-        }
-
-        double crossingNumber = solveRecursively(n+1, p, pi, dir, swappedVertices, optimalNrCrossings);
-        if (crossingNumber < optimalNrCrossings) {
-            optimalNrCrossings = crossingNumber;
-            if (crossingNumber == 0) return optimalNrCrossings;
-        }
-        for (int i = 0; i <= n-1; i++) {
-            // Swap
-            swappedVertices[0] = pi[n];
-            swappedVertices[1] = pi[n]+dir[n];
-
-            int z = p[pi[n] + dir[n]];
-            p[pi[n]] = z;
-            p[pi[n] + dir[n]] = n;
-            pi[z] = pi[n];
-            pi[n] = pi[n] + dir[n];
-
-            crossingNumber = solveRecursively(n+1, p, pi, dir, swappedVertices, optimalNrCrossings);
-            if (crossingNumber < optimalNrCrossings) {
-                optimalNrCrossings = crossingNumber;
-                if (crossingNumber == 0) return optimalNrCrossings;
-            }
-        }
-        dir[n] = -dir[n];
-        return optimalNrCrossings;
-    }*/

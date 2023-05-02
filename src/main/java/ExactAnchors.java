@@ -20,7 +20,6 @@ public class ExactAnchors {
        return solveRecursively(new LinkedList<>(Arrays.asList(graph.getPoints())), vertices, new Point[graph.getNrOfVertices()], new LinkedList<>(), Integer.MAX_VALUE);
     }
 
-    int count = 0;
     LinkedList<AnchorEdge>[][] layers;
     Point[] vertexPointCombinationsOld;
     int crossingNumberOld = 0;
