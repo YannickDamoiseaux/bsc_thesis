@@ -1,6 +1,8 @@
+package graph;
+
+import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 public class EdgeCrossing extends Edge {
@@ -19,6 +21,6 @@ public class EdgeCrossing extends Edge {
         for (EdgeCrossing edge : edgesHavingCrossingWith) {
             edge.removeEdgeCausesCrossing(this);
         }
-        edgesHavingCrossingWith = new ArrayList<>();
+        edgesHavingCrossingWith.clear();
     }
 }

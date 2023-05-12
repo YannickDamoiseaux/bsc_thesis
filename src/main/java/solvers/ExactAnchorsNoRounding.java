@@ -1,3 +1,10 @@
+package solvers;
+
+import graph.AnchorEdgeNew;
+import graph.Edge;
+import graph.Graph;
+import graph.Point;
+
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.net.URISyntaxException;
@@ -27,12 +34,16 @@ public class ExactAnchorsNoRounding implements Solver {
         vertexPointCombinationsOld = vertexPointCombinations.clone();
         crossingNumberOld = calculateNumberOfCrossingStatic(vertexPointCombinations);
         int optimalCrossingNumber = Integer.MAX_VALUE;
-        int[] p = new int[graph.getNrOfVertices()];
-        int[] a = new int[graph.getNrOfVertices()];
+        int[] p = new int[graph.getNrOfPoints()];
+        int[] a = new int[graph.getNrOfPoints()];
 
         int i, j, tmp;
-        for(i = 0; i < a.length; i++) {
+        for(i = 0; i < graph.getNrOfVertices(); i++) {
             a[i] = i + 1;
+            p[i] = 0;
+        }
+        for (i = graph.getNrOfVertices(); i < graph.getNrOfPoints(); i++) {
+            a[i] = -1;
             p[i] = 0;
         }
 
@@ -42,15 +53,18 @@ public class ExactAnchorsNoRounding implements Solver {
             if (p[i] < i) {
                 j = i % 2 * p[i];
 
-                int crossingNumber = calculateNumberOfCrossings(i, j);
-                if (crossingNumber < optimalCrossingNumber) {
-                    optimalCrossingNumber = crossingNumber;
-                    if (optimalCrossingNumber == 0) break;
+                if (!(a[i] == -1 && a[j] == -1)) {
+                    int crossingNumber = calculateNumberOfCrossings(i, j);
+                    if (crossingNumber < optimalCrossingNumber) {
+                        optimalCrossingNumber = crossingNumber;
+                        System.out.println("New best: " + optimalCrossingNumber);
+                        //System.out.println(Arrays.toString(vertexPointCombinations));
+                        if (optimalCrossingNumber == 0) break;
+                    }
+                    tmp = a[j];
+                    a[j] = a[i];
+                    a[i] = tmp;
                 }
-                tmp = a[j];
-                a[j] = a[i];
-                a[i] = tmp;
-
                 p[i]++;
                 i = 1;
             } else {
@@ -94,6 +108,7 @@ public class ExactAnchorsNoRounding implements Solver {
                 }
             }
         }
+
         return crossingNumber;
     }
 
@@ -138,7 +153,6 @@ public class ExactAnchorsNoRounding implements Solver {
             }
         }
 
-        if (crossingNumberOld == 8) System.out.println(crossingNumberOld + " crossing(s) for anchor graph: " + Arrays.deepToString(layers) + " and combinations " + Arrays.toString(vertexPointCombinations));
         vertexPointCombinationsOld = vertexPointCombinations.clone();
         return crossingNumberOld;
     }

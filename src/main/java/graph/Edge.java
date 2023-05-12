@@ -1,3 +1,5 @@
+package graph;
+
 public class Edge {
     private final int v1;
     private final int v2;

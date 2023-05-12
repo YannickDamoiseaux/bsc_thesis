@@ -1,3 +1,7 @@
+package solvers;
+
+import graph.Edge;
+import graph.Graph;
 import ilog.concert.IloException;
 import ilog.concert.IloIntVar;
 import ilog.concert.IloLinearIntExpr;
@@ -8,7 +12,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Objects;
 

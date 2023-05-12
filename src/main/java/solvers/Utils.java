@@ -1,3 +1,12 @@
+package solvers;
+
+import graph.CrossingData;
+import graph.Edge;
+import graph.Graph;
+import graph.Point;
+
+import java.util.ArrayList;
+
 public class Utils {
     public static boolean doEdgesCross(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
         double det1 = determinant(x1, y1, x2, y2, x3, y3);

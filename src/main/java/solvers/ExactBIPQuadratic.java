@@ -1,3 +1,8 @@
+package solvers;
+
+import graph.Edge;
+import graph.Graph;
+import graph.Point;
 import ilog.concert.*;
 import ilog.cplex.IloCplex;
 
@@ -5,14 +10,13 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Objects;
 
-public class ExactBIP implements Solver {
+public class ExactBIPQuadratic implements Solver {
     private final Graph graph;
 
-    public ExactBIP(String src) throws URISyntaxException, FileNotFoundException {
+    public ExactBIPQuadratic(String src) throws URISyntaxException, FileNotFoundException {
         this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
     }
 
@@ -35,47 +39,18 @@ public class ExactBIP implements Solver {
                 cplex.addLe(expr, 1);
             }
 
-            IloIntVar[][][] edgePointCombination = new IloIntVar[graph.getNrOfEdges()][graph.getNrOfPoints()][graph.getNrOfPoints()];
-            for (int e = 0; e < graph.getNrOfEdges(); e++) {
-                Edge edge = graph.getEdges()[e];
-                for (int i = 0; i < graph.getNrOfPoints(); i++) {
-                    for (int j = 0; j < graph.getNrOfPoints(); j++) {
-                        if (i != j) {
-                            IloIntVar var = cplex.intVar(0, 1, "x_" + edge.v1() + "_" + i + "_" + edge.v2() + "_" + j);
-
-                            IloLinearIntExpr expr_1 = cplex.linearIntExpr();
-                            expr_1.addTerm(1, var);
-                            cplex.addLe(expr_1, vars[edge.v1()][i]);
-
-                            IloLinearIntExpr expr_2 = cplex.linearIntExpr();
-                            expr_2.addTerm(1, var);
-                            cplex.addLe(expr_2, vars[edge.v2()][j]);
-
-                            IloLinearIntExpr expr_3 = cplex.linearIntExpr();
-                            expr_3.addTerm(1, var);
-                            IloLinearIntExpr expr_4 = cplex.linearIntExpr();
-                            expr_4.addTerm(1, vars[edge.v1()][i]);
-                            expr_4.addTerm(1, vars[edge.v2()][j]);
-                            expr_4.setConstant(-1);
-                            cplex.addGe(expr_3, expr_4);
-
-                            edgePointCombination[e][i][j] = var;
-                        }
-                    }
-                }
-            }
 
             //IloLinearIntExpr[] objExpressions = new IloLinearIntExpr[((int)(graph.getNrOfEdges() * graph.getNrOfPoints() * (graph.getNrOfPoints()-1) * (0.5*(graph.getNrOfEdges()-1)))) * (graph.getNrOfPoints()-2) * (graph.getNrOfPoints()-3)];
-            LinkedList<IloLinearIntExpr> objExpressions = new LinkedList<>();
+            LinkedList<IloQuadIntExpr> objExpressions = new LinkedList<>();
             boolean[][][][][][] crossings = getCrossings();
-            //System.out.println(crossings[1][8][0][3][6][3]);
+            IloIntVar[][][][] edgePointCombination = new IloIntVar[graph.getNrOfVertices()][graph.getNrOfPoints()][graph.getNrOfVertices()][graph.getNrOfPoints()];
             int count = 0;
             for (int e_1 = 0; e_1 < graph.getNrOfEdges(); e_1++) {
                 Edge edge_1 = graph.getEdges()[e_1];
                 for (int i_1 = 0; i_1 < graph.getNrOfPoints(); i_1++) {
                     for (int j_1 = 0; j_1 < graph.getNrOfPoints(); j_1++) {
                         if (i_1 != j_1) {
-                            for (int e_2 = e_1+1; e_2 < graph.getNrOfEdges(); e_2++) {
+                            for (int e_2 = e_1 + 1; e_2 < graph.getNrOfEdges(); e_2++) {
                                 Edge edge_2 = graph.getEdges()[e_2];
                                 if (edge_2.v1() != edge_1.v1() && edge_2.v1() != edge_1.v2() && edge_2.v2() != edge_1.v1() && edge_2.v2() != edge_1.v2()) {
                                     for (int i_2 = 0; i_2 < graph.getNrOfPoints(); i_2++) {
@@ -83,29 +58,25 @@ public class ExactBIP implements Solver {
                                             for (int j_2 = 0; j_2 < graph.getNrOfPoints(); j_2++) {
                                                 if (j_2 != i_1 && j_2 != j_1 && j_2 != i_2) {
                                                     if (crossings[e_1][i_1][j_1][e_2][i_2][j_2]) { // Only add objective expressions that have a crossing as result, otherwise no point in adding it
-                                                        IloIntVar var = cplex.intVar(0, 1, "x_" + edge_1.v1() + "_" + i_1 + "_" + edge_1.v2() + "_" + j_1
-                                                                + edge_2.v1() + "_" + i_2 + "_" + edge_2.v2() + "_" + j_2);
+                                                        IloIntVar var_1 = edgePointCombination[edge_1.v1()][i_1][edge_1.v2()][j_1];
+                                                        if (var_1 == null) {
+                                                            IloQuadIntExpr expr_1 = cplex.quadIntExpr();
+                                                            expr_1.addTerm(1, vars[edge_1.v1()][i_1], vars[edge_1.v2()][j_1]);
+                                                            var_1 = cplex.boolVar();
+                                                            cplex.addEq(var_1, expr_1);
+                                                        }
+                                                        IloIntVar var_2 = edgePointCombination[edge_2.v1()][i_2][edge_2.v2()][j_2];
+                                                        if (var_2 == null) {
+                                                            IloQuadIntExpr expr_2 = cplex.quadIntExpr();
+                                                            expr_2.addTerm(1, vars[edge_2.v1()][i_2], vars[edge_2.v2()][j_2]);
+                                                            var_2 = cplex.boolVar();
+                                                            cplex.addEq(var_2, expr_2);
+                                                        }
 
-                                                        IloLinearIntExpr expr_1 = cplex.linearIntExpr();
-                                                        expr_1.addTerm(1, var);
-                                                        cplex.addLe(expr_1, edgePointCombination[e_1][i_1][j_1]);
+                                                        IloQuadIntExpr expr_3 = cplex.quadIntExpr();
+                                                        expr_3.addTerm(1, var_1, var_2);
 
-                                                        IloLinearIntExpr expr_2 = cplex.linearIntExpr();
-                                                        expr_2.addTerm(1, var);
-                                                        cplex.addLe(expr_2, edgePointCombination[e_2][i_2][j_2]);
-
-                                                        IloLinearIntExpr expr_3 = cplex.linearIntExpr();
-                                                        expr_3.addTerm(1, var);
-                                                        IloLinearIntExpr expr_4 = cplex.linearIntExpr();
-                                                        expr_4.addTerm(1, edgePointCombination[e_1][i_1][j_1]);
-                                                        expr_4.addTerm(1, edgePointCombination[e_2][i_2][j_2]);
-                                                        expr_4.setConstant(-1);
-                                                        cplex.addGe(expr_3, expr_4);
-
-                                                        IloLinearIntExpr obj_expr = cplex.linearIntExpr();
-                                                        obj_expr.addTerm(crossings[e_1][i_1][j_1][e_2][i_2][j_2] ? 1 : 0, var);
-                                                        //objExpressions[count] = obj_expr;
-                                                        objExpressions.add(obj_expr);
+                                                        objExpressions.add(expr_3);
                                                         count++;
                                                     }
                                                 }
@@ -118,24 +89,16 @@ public class ExactBIP implements Solver {
                     }
                 }
             }
+
             System.out.println("Nr of objective constraints/expressions: " + count);
 
             //cplex.addMinimize(cplex.sum(objExpressions));
-            cplex.addMinimize(cplex.sum(objExpressions.toArray(new IloLinearIntExpr[0])));
+            cplex.addMinimize(cplex.sum(objExpressions.toArray(new IloQuadIntExpr[0])));
             // solve and retrieve optimal solution
             if (cplex.solve()) {
-                /*System.out.println(Arrays.toString(cplex.getValues(vars[0])));
-                System.out.println(Arrays.toString(cplex.getValues(vars[1])));
-                System.out.println(Arrays.toString(cplex.getValues(vars[2])));
-                System.out.println(Arrays.toString(cplex.getValues(vars[3])));
-                System.out.println(Arrays.toString(cplex.getValues(vars[4])));
-                System.out.println(Arrays.toString(cplex.getValues(vars[5])));
-                System.out.println(Arrays.toString(cplex.getValues(vars[6])));
-                System.out.println(Arrays.toString(cplex.getValues(vars[7])));
-                System.out.println(Arrays.toString(cplex.getValues(vars[8])));*/
-
                 return cplex.getObjValue();
             }
+
         } catch (IloException e) {
             e.printStackTrace();
         }

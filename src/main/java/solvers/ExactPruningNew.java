@@ -1,3 +1,9 @@
+package solvers;
+
+import graph.Graph;
+import graph.EdgeCrossing;
+import graph.Point;
+
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.net.URISyntaxException;
@@ -33,12 +39,16 @@ public class ExactPruningNew implements Solver {
         }
 
 
-        int[] p = new int[graph.getNrOfVertices()];
-        int[] a = new int[graph.getNrOfVertices()];
+        int[] p = new int[graph.getNrOfPoints()];
+        int[] a = new int[graph.getNrOfPoints()];
 
         int i, j, tmp;
-        for(i = 0; i < a.length; i++) {
+        for(i = 0; i < graph.getNrOfVertices(); i++) {
             a[i] = i + 1;
+            p[i] = 0;
+        }
+        for (i = graph.getNrOfVertices(); i < graph.getNrOfPoints(); i++) {
+            a[i] = -1;
             p[i] = 0;
         }
 
@@ -51,19 +61,20 @@ public class ExactPruningNew implements Solver {
             if (p[i] < i) {
                 j = i % 2 * p[i];
 
-                int crossingNumber = getNrOfCrossings(i, j, lastCrossingNumber, optimalCrossingNumber);
+                if (!(a[i] == -1 && a[j] == -1)) {
+                    int crossingNumber = getNrOfCrossings(i, j, lastCrossingNumber, optimalCrossingNumber);
 
-                lastCrossingNumber = crossingNumber;
-                if (crossingNumber < optimalCrossingNumber) {
-                    optimalCrossingNumber = crossingNumber;
-                    System.out.println("New best: " + optimalCrossingNumber);
-                    //System.out.println(Arrays.toString(vertexPointCombinations));
-                    if (optimalCrossingNumber == 0) break;
+                    lastCrossingNumber = crossingNumber;
+                    if (crossingNumber < optimalCrossingNumber) {
+                        optimalCrossingNumber = crossingNumber;
+                        System.out.println("New best: " + optimalCrossingNumber);
+                        //System.out.println(Arrays.toString(vertexPointCombinations));
+                        if (optimalCrossingNumber == 0) break;
+                    }
+                    tmp = a[j];
+                    a[j] = a[i];
+                    a[i] = tmp;
                 }
-                tmp = a[j];
-                a[j] = a[i];
-                a[i] = tmp;
-
                 p[i]++;
                 i = 1;
             } else {
@@ -72,15 +83,10 @@ public class ExactPruningNew implements Solver {
             }
         }
 
-        System.out.println(count1 + ", " + count_pruned);
         return optimalCrossingNumber;
     }
 
-    int count1 = 0;
-    int count_pruned = 0;
-
     private int getNrOfCrossings(int swappedVertex1, int swappedVertex2, int lastCrossingNumber, int bestCrossingNumberFound) {
-        count1++;
         Point temp = vertexPointCombinations[swappedVertex1];
         vertexPointCombinations[swappedVertex1] = vertexPointCombinations[swappedVertex2];
         vertexPointCombinations[swappedVertex2] = temp;

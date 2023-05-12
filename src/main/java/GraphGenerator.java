@@ -1,10 +1,14 @@
+import graph.Edge;
+import graph.Graph;
+import graph.Point;
+
 import java.util.Random;
 
 public class GraphGenerator {
     public static void main(String[] args) {
         GraphGenerator graphGenerator = new GraphGenerator();
-        Graph graph = graphGenerator.generateGraph(12, 30, 12, 5, 5);
-        graph.saveToFile("test6.json");
+        Graph graph = graphGenerator.generateGraph(12, 28, 15, 6, 6);
+        graph.saveToFile("test9.json");
     }
 
     private final Random rand = new Random(0);

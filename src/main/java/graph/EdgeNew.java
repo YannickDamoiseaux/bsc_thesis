@@ -1,3 +1,5 @@
+package graph;
+
 public class EdgeNew {
     private final double v1;
     private final double v2;

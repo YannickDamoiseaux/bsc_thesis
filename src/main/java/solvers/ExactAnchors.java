@@ -1,3 +1,10 @@
+package solvers;
+
+import graph.AnchorEdge;
+import graph.Edge;
+import graph.Graph;
+import graph.Point;
+
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.net.URISyntaxException;
