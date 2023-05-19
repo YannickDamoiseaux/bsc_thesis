@@ -79,8 +79,6 @@ public class LowerboundSAT implements Solver {
         ArrayList<CrossingData>[] crossings = getCrossings();
 
         int blockSize = 10000;
-        //int nrOfDivisions = crossings.size()/blockSize;
-        //System.out.println(crossings.size() + ", " + blockSize + ", " + nrOfDivisions);
         int[] blockSizePerVertex = new int[graph.getNrOfVertices()];
         int sum = 0;
         for (int i = 0; i < blockSizePerVertex.length; i++) {
@@ -108,7 +106,6 @@ public class LowerboundSAT implements Solver {
                 for (int i = 0; i < blockSizePerVertex.length; i++) {
                     crossingsDivision.addAll(crossings[i].subList(blockSizePerVertex[i] * iteration, blockSizePerVertex[i] * (iteration + 1)));
                 }
-                //List<Solvers.CrossingData> crossingsDivision = crossings.subList(blockSize * iteration, blockSize * (iteration + 1));
 
                 currentLiteralIdx = addCrossingClauses(miniSat, f, verticesToPointsAssigned, crossingLiterals, crossingsDivision, crossingNumber, currentLiteralIdx);
             }
@@ -121,7 +118,6 @@ public class LowerboundSAT implements Solver {
                 for (int i = 0; i < blockSizePerVertex.length; i++) {
                     crossingsDivision.addAll(crossings[i].subList(blockSizePerVertex[i] * iteration, blockSizePerVertex[i] * (iteration + 1)));
                 }
-                //List<Solvers.CrossingData> crossingsDivision = crossings.subList(blockSize * iteration, blockSize * (iteration + 1));
 
                 currentLiteralIdx = addCrossingClauses(miniSat, f, verticesToPointsAssigned, crossingLiterals, crossingsDivision, crossingNumber, currentLiteralIdx);
                 tempState = miniSat.saveState();
@@ -204,12 +200,14 @@ public class LowerboundSAT implements Solver {
                                     if (i_2 != i_1 && i_2 != j_1) {
                                         for (int j_2 = 0; j_2 < graph.getNrOfPoints(); j_2++) {
                                             if (j_2 != i_1 && j_2 != j_1 && j_2 != i_2) {
-                                                if (Utils.doEdgesCross(points[i_1].x(), points[i_1].y(), points[j_1].x(), points[j_1].y(), points[i_2].x(), points[i_2].y(), points[j_2].x(), points[j_2].y())) {
-                                                    CrossingData crossing = new CrossingData(e_1, i_1, j_1, e_2, i_2, j_2);
-                                                    crossings[edge_1.v1()].add(crossing);
-                                                    crossings[edge_1.v2()].add(crossing);
-                                                    crossings[edge_2.v1()].add(crossing);
-                                                    crossings[edge_2.v2()].add(crossing);
+                                                int crossing = Utils.doEdgesCross(points[i_1].x(), points[i_1].y(), points[j_1].x(), points[j_1].y(), points[i_2].x(), points[i_2].y(), points[j_2].x(), points[j_2].y());
+                                                if (crossing == -1) continue;
+                                                if (crossing == 1) {
+                                                    CrossingData crossingData = new CrossingData(e_1, i_1, j_1, e_2, i_2, j_2);
+                                                    crossings[edge_1.v1()].add(crossingData);
+                                                    crossings[edge_1.v2()].add(crossingData);
+                                                    crossings[edge_2.v1()].add(crossingData);
+                                                    crossings[edge_2.v2()].add(crossingData);
                                                 }
                                             }
                                         }

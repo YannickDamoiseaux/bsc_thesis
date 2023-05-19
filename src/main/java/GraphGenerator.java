@@ -8,7 +8,7 @@ public class GraphGenerator {
     public static void main(String[] args) {
         GraphGenerator graphGenerator = new GraphGenerator();
         Graph graph = graphGenerator.generateGraph(12, 28, 15, 6, 6);
-        graph.saveToFile("test9.json");
+        graph.saveToFile("generated/test9.json");
     }
 
     private final Random rand = new Random(0);

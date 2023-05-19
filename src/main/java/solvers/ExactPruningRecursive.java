@@ -1,19 +1,21 @@
 package solvers;
 
-import graph.Graph;
 import graph.Edge;
+import graph.Graph;
 import graph.Point;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
-public class ExactPruning implements Solver {
+public class ExactPruningRecursive implements Solver {
     private final Graph graph;
 
-    public ExactPruning(String src) throws URISyntaxException, FileNotFoundException {
+    public ExactPruningRecursive(String src) throws URISyntaxException, FileNotFoundException {
         this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
         System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
     }
@@ -26,52 +28,18 @@ public class ExactPruning implements Solver {
     int count_tot = 0;
 
     public double solve() {
-        //vertexHasAtleastOneCrossing = new boolean[graph.getNrOfVertices()];
+        return -1;
+    }
 
-        pointVertexCombinations = new int[graph.getNrOfPoints()];
-        vertexPointCombinations = new Point[graph.getNrOfVertices()];
-        for (int i = 0; i < vertexPointCombinations.length; i++) {
-            vertexPointCombinations[i] = graph.getPoints()[i];
+    /*private int solveRecursively(List<Integer> availableVertices, int[] assignedVertices, int idx, int crossingNr) {
+        if (availableVertices.size() == 0) return getNrOfCrossings(crossingNr);
+        for (Integer v : availableVertices) {
+            assignedVertices[idx] = v;
+            availableVertices.remove(v);
+            int nrCrossings = solveRecursively(availableVertices, assignedVertices, idx++, crossingNr);
+            availableVertices.add(v);
+            if (nrCrossings > crossingNr) crossingNr = nrCrossings;
         }
-
-        int[] p = new int[graph.getNrOfPoints()];
-        int i, j;
-        for(i = 0; i < graph.getNrOfVertices(); i++) {
-            pointVertexCombinations[i] = i;
-            p[i] = 0;
-        }
-        for (i = graph.getNrOfVertices(); i < graph.getNrOfPoints(); i++) {
-            pointVertexCombinations[i] = -1;
-            p[i] = 0;
-        }
-
-        int optimalCrossingNumber = calculateNrOfCrossings(Integer.MAX_VALUE);
-
-        System.out.println("Initial: " + optimalCrossingNumber);
-        i = 1;
-        // Source: https://www.quickperm.org/quickperm.php
-        while(i < pointVertexCombinations.length) {
-            if (p[i] < i) {
-                j = i % 2 * p[i];
-
-                if (!(pointVertexCombinations[i] == -1 && pointVertexCombinations[j] == -1)) {
-                    int crossingNumber = getNrOfCrossings(i, j, optimalCrossingNumber);
-                    if (crossingNumber < optimalCrossingNumber) {
-                        optimalCrossingNumber = crossingNumber;
-                        System.out.println("New best: " + optimalCrossingNumber);
-                        System.out.println(Arrays.toString(pointVertexCombinations));
-                        if (optimalCrossingNumber == 0) break;
-                    }
-                }
-                p[i]++;
-                i = 1;
-            } else {
-                p[i] = 0;
-                i++;
-            }
-        }
-        System.out.println((double)count/count_tot);
-        return optimalCrossingNumber;
     }
 
     private int getNrOfCrossings(int swappedPointIdx1, int swappedPointIdx2, int bestCrossingNumberFound) {
@@ -102,14 +70,14 @@ public class ExactPruning implements Solver {
                 colinearEdge[1] = null;
             } else return Integer.MAX_VALUE;
         }
-
+*/
         /*if (!(pointVertexCombinations[swappedPointIdx1] != -1 && vertexHasAtleastOneCrossing[pointVertexCombinations[swappedPointIdx1]])
                 && !(pointVertexCombinations[swappedPointIdx2] != -1 && vertexHasAtleastOneCrossing[pointVertexCombinations[swappedPointIdx2]])) {
             return bestCrossingNumberFound;
         }
         vertexHasAtleastOneCrossing[pointVertexCombinations[swappedPointIdx1]] = false;
         vertexHasAtleastOneCrossing[pointVertexCombinations[swappedPointIdx2]] = false;*/
-
+/*
         return calculateNrOfCrossings(bestCrossingNumberFound);
     }
 
@@ -129,15 +97,15 @@ public class ExactPruning implements Solver {
                     return Integer.MAX_VALUE;
                 }
                 else if (crossing == 1) {
-                    crossingNumber++;
+                    crossingNumber++;*/
                     /*vertexHasAtleastOneCrossing[edge1.v1()] = true;
                     vertexHasAtleastOneCrossing[edge1.v2()] = true;
                     vertexHasAtleastOneCrossing[edge2.v1()] = true;
-                    vertexHasAtleastOneCrossing[edge2.v2()] = true;*/
+                    vertexHasAtleastOneCrossing[edge2.v2()] = true;*//*
                     if (crossingNumber >= bestCrossingNumberFound) return bestCrossingNumberFound;
                 }
             }
         }
         return crossingNumber;
-    }
+    }*/
 }

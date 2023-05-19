@@ -106,6 +106,7 @@ public class ExactBIPQuadratic implements Solver {
     }
 
     private boolean[][][][][][] getCrossings() {
+        /*
         boolean[][][][][][] crossings = new boolean[graph.getNrOfEdges()][graph.getNrOfPoints()][graph.getNrOfPoints()][graph.getNrOfEdges()][graph.getNrOfPoints()][graph.getNrOfPoints()];
         Point[] points = graph.getPoints();
         for (int e_1 = 0; e_1 < graph.getNrOfEdges(); e_1++) {
@@ -132,5 +133,7 @@ public class ExactBIPQuadratic implements Solver {
             }
         }
         return crossings;
+         */
+        return null;
     }
 }

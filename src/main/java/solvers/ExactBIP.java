@@ -13,6 +13,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 
 public class ExactBIP implements Solver {
@@ -53,17 +54,17 @@ public class ExactBIP implements Solver {
                             expr_1.addTerm(1, var);
                             cplex.addLe(expr_1, vars[edge.v1()][i]);
 
-                            IloLinearIntExpr expr_2 = cplex.linearIntExpr();
-                            expr_2.addTerm(1, var);
-                            cplex.addLe(expr_2, vars[edge.v2()][j]);
+                            //IloLinearIntExpr expr_2 = cplex.linearIntExpr();
+                            //expr_2.addTerm(1, var);
+                            cplex.addLe(expr_1, vars[edge.v2()][j]);
 
-                            IloLinearIntExpr expr_3 = cplex.linearIntExpr();
-                            expr_3.addTerm(1, var);
+                            //IloLinearIntExpr expr_3 = cplex.linearIntExpr();
+                            //expr_3.addTerm(1, var);
                             IloLinearIntExpr expr_4 = cplex.linearIntExpr();
                             expr_4.addTerm(1, vars[edge.v1()][i]);
                             expr_4.addTerm(1, vars[edge.v2()][j]);
                             expr_4.setConstant(-1);
-                            cplex.addGe(expr_3, expr_4);
+                            cplex.addGe(expr_1, expr_4);
 
                             edgePointCombination[e][i][j] = var;
                         }
@@ -72,7 +73,9 @@ public class ExactBIP implements Solver {
             }
 
             LinkedList<IloLinearIntExpr> objExpressions = new LinkedList<>();
-            ArrayList<CrossingData> crossings = getCrossings();
+            List<CrossingData>[] crossingAndColinear = getCrossings();
+            List<CrossingData> crossings = crossingAndColinear[0];
+            List<CrossingData> colinear = crossingAndColinear[1];
 
             for (CrossingData crossing : crossings) {
                 IloIntVar var = cplex.intVar(0, 1, "x_" + crossing.e1() + "_" + crossing.p1() + "_" + crossing.p2()
@@ -82,21 +85,45 @@ public class ExactBIP implements Solver {
                 expr_1.addTerm(1, var);
                 cplex.addLe(expr_1, edgePointCombination[crossing.e1()][crossing.p1()][crossing.p2()]);
 
-                IloLinearIntExpr expr_2 = cplex.linearIntExpr();
-                expr_2.addTerm(1, var);
-                cplex.addLe(expr_2, edgePointCombination[crossing.e2()][crossing.p3()][crossing.p4()]);
+                //IloLinearIntExpr expr_2 = cplex.linearIntExpr();
+                //expr_2.addTerm(1, var);
+                cplex.addLe(expr_1, edgePointCombination[crossing.e2()][crossing.p3()][crossing.p4()]);
 
-                IloLinearIntExpr expr_3 = cplex.linearIntExpr();
-                expr_3.addTerm(1, var);
+                //IloLinearIntExpr expr_3 = cplex.linearIntExpr();
+                //expr_3.addTerm(1, var);
                 IloLinearIntExpr expr_4 = cplex.linearIntExpr();
                 expr_4.addTerm(1, edgePointCombination[crossing.e1()][crossing.p1()][crossing.p2()]);
                 expr_4.addTerm(1, edgePointCombination[crossing.e2()][crossing.p3()][crossing.p4()]);
                 expr_4.setConstant(-1);
-                cplex.addGe(expr_3, expr_4);
+                cplex.addGe(expr_1, expr_4);
 
                 IloLinearIntExpr obj_expr = cplex.linearIntExpr();
                 obj_expr.addTerm(1, var);
                 objExpressions.add(obj_expr);
+            }
+
+            for (CrossingData colinearity : colinear) {
+                IloIntVar var1 = edgePointCombination[colinearity.e1()][colinearity.p1()][colinearity.p2()];
+                IloIntVar var2 = edgePointCombination[colinearity.e2()][colinearity.p3()][colinearity.p4()];
+                IloIntVar new_var = cplex.intVar(0, 1);
+
+                IloLinearIntExpr expr_1 = cplex.linearIntExpr();
+                expr_1.addTerm(1, new_var);
+                IloLinearIntExpr expr_2 = cplex.linearIntExpr();
+                expr_2.addTerm(1, var1);
+                cplex.addLe(expr_1, expr_2);
+
+                IloLinearIntExpr expr_3 = cplex.linearIntExpr();
+                expr_3.addTerm(1, var2);
+                cplex.addLe(expr_1, expr_3);
+
+                IloLinearIntExpr expr_5 = cplex.linearIntExpr();
+                expr_5.addTerm(1, var1);
+                expr_5.addTerm(1, var2);
+                expr_5.setConstant(-1);
+                cplex.addGe(expr_1, expr_5);
+
+                cplex.addEq(0, new_var);
             }
 
             cplex.addMinimize(cplex.sum(objExpressions.toArray(new IloLinearIntExpr[0])));
@@ -107,14 +134,16 @@ public class ExactBIP implements Solver {
         } catch (IloException e) {
             e.printStackTrace();
         }
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
-    private ArrayList<CrossingData> getCrossings() {
+    private ArrayList<CrossingData>[] getCrossings() {
         ArrayList<CrossingData> crossings = new ArrayList<>();
+        ArrayList<CrossingData> colinear = new ArrayList<>();
         Point[] points = graph.getPoints();
 
-        int count = 0;
+        int count_cr = 0;
+        int count_co = 0;
 
         for (int e_1 = 0; e_1 < graph.getNrOfEdges(); e_1++) {
             Edge edge_1 = graph.getEdges()[e_1];
@@ -128,11 +157,16 @@ public class ExactBIP implements Solver {
                                     if (i_2 != i_1 && i_2 != j_1) {
                                         for (int j_2 = 0; j_2 < graph.getNrOfPoints(); j_2++) {
                                             if (j_2 != i_1 && j_2 != j_1 && j_2 != i_2) {
-                                                if (Utils.doEdgesCross(points[i_1].x(), points[i_1].y(), points[j_1].x(), points[j_1].y(), points[i_2].x(), points[i_2].y(), points[j_2].x(), points[j_2].y())) {
-                                                    CrossingData crossing = new CrossingData(e_1, i_1, j_1, e_2, i_2, j_2);
-                                                    crossings.add(crossing);
-
-                                                    count++;
+                                                int crossing = Utils.doEdgesCross(points[i_1].x(), points[i_1].y(), points[j_1].x(), points[j_1].y(), points[i_2].x(), points[i_2].y(), points[j_2].x(), points[j_2].y());
+                                                if (crossing == -1) {
+                                                    count_co++;
+                                                    CrossingData crossingData = new CrossingData(e_1, i_1, j_1, e_2, i_2, j_2);
+                                                    colinear.add(crossingData);
+                                                }
+                                                else if (crossing == 1) {
+                                                    count_cr++;
+                                                    CrossingData crossingData = new CrossingData(e_1, i_1, j_1, e_2, i_2, j_2);
+                                                    crossings.add(crossingData);
                                                 }
                                             }
                                         }
@@ -144,7 +178,7 @@ public class ExactBIP implements Solver {
                 }
             }
         }
-        System.out.println(count + " Possible crossings");
-        return crossings;
+        System.out.println(count_cr + " Possible crossings and " + count_co + " possible co-linearities");
+        return new ArrayList[]{crossings, colinear};
     }
 }
