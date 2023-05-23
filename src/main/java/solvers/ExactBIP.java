@@ -6,6 +6,7 @@ import graph.Graph;
 import graph.Point;
 import ilog.concert.*;
 import ilog.cplex.IloCplex;
+import jdk.jshell.execution.Util;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -73,7 +74,7 @@ public class ExactBIP implements Solver {
             }
 
             LinkedList<IloLinearIntExpr> objExpressions = new LinkedList<>();
-            List<CrossingData>[] crossingAndColinear = getCrossings();
+            List<CrossingData>[] crossingAndColinear = Utils.getCrossings(graph);
             List<CrossingData> crossings = crossingAndColinear[0];
             List<CrossingData> colinear = crossingAndColinear[1];
 
@@ -135,50 +136,5 @@ public class ExactBIP implements Solver {
             e.printStackTrace();
         }
         return Integer.MAX_VALUE;
-    }
-
-    private ArrayList<CrossingData>[] getCrossings() {
-        ArrayList<CrossingData> crossings = new ArrayList<>();
-        ArrayList<CrossingData> colinear = new ArrayList<>();
-        Point[] points = graph.getPoints();
-
-        int count_cr = 0;
-        int count_co = 0;
-
-        for (int e_1 = 0; e_1 < graph.getNrOfEdges(); e_1++) {
-            Edge edge_1 = graph.getEdges()[e_1];
-            for (int i_1 = 0; i_1 < graph.getNrOfPoints(); i_1++) {
-                for (int j_1 = 0; j_1 < graph.getNrOfPoints(); j_1++) {
-                    if (i_1 != j_1) {
-                        for (int e_2 = e_1 + 1; e_2 < graph.getNrOfEdges(); e_2++) {
-                            Edge edge_2 = graph.getEdges()[e_2];
-                            if (edge_2.v1() != edge_1.v1() && edge_2.v1() != edge_1.v2() && edge_2.v2() != edge_1.v1() && edge_2.v2() != edge_1.v2()) {
-                                for (int i_2 = 0; i_2 < graph.getNrOfPoints(); i_2++) {
-                                    if (i_2 != i_1 && i_2 != j_1) {
-                                        for (int j_2 = 0; j_2 < graph.getNrOfPoints(); j_2++) {
-                                            if (j_2 != i_1 && j_2 != j_1 && j_2 != i_2) {
-                                                int crossing = Utils.doEdgesCross(points[i_1].x(), points[i_1].y(), points[j_1].x(), points[j_1].y(), points[i_2].x(), points[i_2].y(), points[j_2].x(), points[j_2].y());
-                                                if (crossing == -1) {
-                                                    count_co++;
-                                                    CrossingData crossingData = new CrossingData(e_1, i_1, j_1, e_2, i_2, j_2);
-                                                    colinear.add(crossingData);
-                                                }
-                                                else if (crossing == 1) {
-                                                    count_cr++;
-                                                    CrossingData crossingData = new CrossingData(e_1, i_1, j_1, e_2, i_2, j_2);
-                                                    crossings.add(crossingData);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        System.out.println(count_cr + " Possible crossings and " + count_co + " possible co-linearities");
-        return new ArrayList[]{crossings, colinear};
     }
 }

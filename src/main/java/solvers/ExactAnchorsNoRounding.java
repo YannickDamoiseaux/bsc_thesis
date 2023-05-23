@@ -158,7 +158,7 @@ public class ExactAnchorsNoRounding implements Solver {
     }
 
     private int doEdgesCross(Point[] vertexPointCombinations, int layer, AnchorEdgeNew e1, AnchorEdgeNew e2) {
-        //if (e1.v1() == e2.v1() && e1.v2() == e2.v2()) return -1;
+        if (e1.v1() == e2.v1() && e1.v2() == e2.v2()) return -1;
         if (e2.v1() > e1.v1() && e1.v2() > e2.v2()) {
             e1.addEdgeCausingCrossing(e2);
             e2.addEdgeCausingCrossing(e1);
