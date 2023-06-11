@@ -15,7 +15,7 @@ import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.Objects;
 
-public class ExactILP implements Solver {
+public class ExactILP extends Solver {
     private final Graph graph;
 
     public ExactILP(String src) throws URISyntaxException, FileNotFoundException {
@@ -155,6 +155,11 @@ public class ExactILP implements Solver {
         return -1;
     }
 
+    @Override
+    public Solver newEmptyInstance() {
+        return null;
+    }
+
     private IloIntVar[][] area_vars;
 
     private IloLinearIntExpr getArea2Expr(IloCplex cplex, IloIntVar[][] vertices, int[] vertices_int, boolean negativeArea) throws IloException {
@@ -204,5 +209,15 @@ public class ExactILP implements Solver {
         expr_linear.addTerms(coeffs, vars);
 
         return expr_linear;
+    }
+
+    @Override
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+
+    @Override
+    public double getOptimalCrossingNumber() {
+        return 0;
     }
 }

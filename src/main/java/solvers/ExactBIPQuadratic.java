@@ -13,7 +13,7 @@ import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.Objects;
 
-public class ExactBIPQuadratic implements Solver {
+public class ExactBIPQuadratic extends Solver {
     private final Graph graph;
 
     public ExactBIPQuadratic(String src) throws URISyntaxException, FileNotFoundException {
@@ -103,6 +103,21 @@ public class ExactBIPQuadratic implements Solver {
             e.printStackTrace();
         }
         return -1;
+    }
+
+    @Override
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+
+    @Override
+    public Solver newEmptyInstance() {
+        return null;
+    }
+
+    @Override
+    public double getOptimalCrossingNumber() {
+        return 0;
     }
 
     private boolean[][][][][][] getCrossings() {

@@ -13,19 +13,9 @@ public class AnchorEdgeNew extends EdgeNew {
     }
 
     public int getNrOfCrossingCausing() { return edgesCausingCrossing.size(); }
-    public void addEdgeCausingCrossing(AnchorEdgeNew anchorEdge) {
-        for (AnchorEdgeNew edge : edgesCausingCrossing) {
-            if (edge.getParentEdge().equals(anchorEdge.getParentEdge())) return;
-        }
-        edgesCausingCrossing.add(anchorEdge);
-    }
-    public void removeEdgeCausingCrossing(AnchorEdgeNew anchorEdge) {
-        for (AnchorEdgeNew edge : edgesCausingCrossing) {
-            if (anchorEdge.equals(edge)) {
-                edgesCausingCrossing.remove(edge);
-                break;
-            }
-        }
+    public void addEdgeCausingCrossing(AnchorEdgeNew edge) { edgesCausingCrossing.add(edge); }
+    public void removeEdgeCausingCrossing(AnchorEdgeNew edge) {
+        edgesCausingCrossing.remove(edge);
     }
     public boolean isEdgeCausingCrossing() { return edgesCausingCrossing.size() > 0; }
     public List<AnchorEdgeNew> getOtherEdgeCausingCrossing() { return edgesCausingCrossing; }

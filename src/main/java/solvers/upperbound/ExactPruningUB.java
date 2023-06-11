@@ -5,60 +5,92 @@ import graph.Graph;
 import graph.Point;
 import solvers.Utils;
 
-import java.util.Arrays;
+import java.util.*;
 
 public class ExactPruningUB {
     private final Graph graph;
-    private int[] pointVertexCombinations;
+    private Integer[] pointVertexCombinations;
     private Point[] vertexPointCombinations;
     private final int[] verticesToChange;
     private final Point[] pointPartition;
     private final Edge[] colinearEdge = new Edge[2];
+    private boolean[] isVertexInPartition;
+    private Set<String> set;
+    private boolean useHashSet;
+    private StringBuilder stringBuilder = new StringBuilder();
+    private Random rand = new Random(0);
+    private long startTime;
+    private final double timeAllowed;
 
-    public ExactPruningUB(Graph graph, Point[] vertexPointCombinations, int[] verticesToChange, Point[] pointPartition) {
+    public ExactPruningUB(Graph graph, Point[] vertexPointCombinations, int[] verticesToChange, Point[] pointPartition, double timeInMillis) {
         this.graph = graph;
         this.vertexPointCombinations = vertexPointCombinations;
         this.verticesToChange = verticesToChange;
         this.pointPartition = pointPartition;
+        this.timeAllowed = timeInMillis;
     }
 
     public Point[] solve() {
-        pointVertexCombinations = new int[pointPartition.length];
-        int idx = 0;
-        for (int i = 0; i < vertexPointCombinations.length; i++) {
-            if (vertexPointCombinations[i] == null) vertexPointCombinations[i] = pointPartition[idx++];
+        startTime = System.nanoTime();
+        useHashSet = graph.getNrOfPoints()-verticesToChange.length > verticesToChange.length/2;
+        if (useHashSet) set = new HashSet<>();
+
+        isVertexInPartition = new boolean[graph.getNrOfVertices()];
+        for (int i : verticesToChange) {
+            isVertexInPartition[i] = true;
         }
+        pointVertexCombinations = new Integer[pointPartition.length];
+        ArrayList<Point> availablePoints = new ArrayList<>(Arrays.asList(pointPartition));
+
+        for (int i = 0; i < vertexPointCombinations.length; i++) {
+            if (vertexPointCombinations[i] == null) {
+                int idx = rand.nextInt(availablePoints.size());
+                vertexPointCombinations[i] = availablePoints.get(idx);
+                availablePoints.remove(idx);
+            }
+        }
+
+        //System.out.println(Arrays.toString(vertexPointCombinations));
+
+        Arrays.fill(pointVertexCombinations, -1);
 
         int[] p = new int[pointPartition.length];
         int i, j;
         for(i = 0; i < verticesToChange.length; i++) {
-            pointVertexCombinations[i] = i;
-            p[i] = 0;
+            for (int b = 0; b < pointPartition.length; b++) {
+                if (pointPartition[b].equals(vertexPointCombinations[verticesToChange[i]])) {
+                    pointVertexCombinations[b] = verticesToChange[i];
+                    break;
+                }
+            }
+            //pointVertexCombinations[i] = verticesToChange[i];
         }
-        for (i = verticesToChange.length; i < pointPartition.length; i++) {
-            pointVertexCombinations[i] = -1;
+        for (i = 0; i < pointPartition.length; i++) {
             p[i] = 0;
         }
 
-        System.out.println("Intial v/p combinations filled " + Arrays.toString(vertexPointCombinations));
         int optimalCrossingNumber = calculateNrOfCrossings(Integer.MAX_VALUE);
-        Point[] optimalVertexPointCombinations = vertexPointCombinations.clone();
+        Point[] optimalVertexPointCombinations = (optimalCrossingNumber == Integer.MAX_VALUE ? null : vertexPointCombinations.clone());
 
-        //System.out.println("Initial: " + optimalCrossingNumber);
         if (optimalCrossingNumber == 0) return vertexPointCombinations;
+
         i = 1;
         // Source: https://www.quickperm.org/quickperm.php
         while(i < pointVertexCombinations.length) {
+            if (Thread.currentThread().isInterrupted()) {
+                return optimalVertexPointCombinations;
+            }
             if (p[i] < i) {
+                if ((System.nanoTime()-startTime)/1000000.0 >= timeAllowed) return optimalVertexPointCombinations;
                 j = i % 2 * p[i];
 
                 if (!(pointVertexCombinations[i] == -1 && pointVertexCombinations[j] == -1)) {
                     int crossingNumber = getNrOfCrossings(i, j, optimalCrossingNumber);
                     if (crossingNumber < optimalCrossingNumber) {
                         optimalCrossingNumber = crossingNumber;
-                        optimalVertexPointCombinations = vertexPointCombinations.clone();
-                        //System.out.println("New best: " + optimalCrossingNumber);
+                        //System.out.println("Best " + optimalCrossingNumber);
                         //System.out.println(Arrays.toString(vertexPointCombinations));
+                        optimalVertexPointCombinations = vertexPointCombinations.clone();
                         if (optimalCrossingNumber == 0) break;
                     }
                 }
@@ -75,22 +107,32 @@ public class ExactPruningUB {
 
     private int getNrOfCrossings(int swappedPointIdx1, int swappedPointIdx2, int bestCrossingNumberFound) {
         if (pointVertexCombinations[swappedPointIdx1] != -1) {
-            vertexPointCombinations[verticesToChange[pointVertexCombinations[swappedPointIdx1]]] = pointPartition[swappedPointIdx2];
+            vertexPointCombinations[pointVertexCombinations[swappedPointIdx1]] = pointPartition[swappedPointIdx2];
         }
         if (pointVertexCombinations[swappedPointIdx2] != -1) {
-            vertexPointCombinations[verticesToChange[pointVertexCombinations[swappedPointIdx2]]] = pointPartition[swappedPointIdx1];
+            vertexPointCombinations[pointVertexCombinations[swappedPointIdx2]] = pointPartition[swappedPointIdx1];
         }
+
         int temp = pointVertexCombinations[swappedPointIdx1];
         pointVertexCombinations[swappedPointIdx1] = pointVertexCombinations[swappedPointIdx2];
         pointVertexCombinations[swappedPointIdx2] = temp;
 
-        System.out.println(swappedPointIdx1 + ", " + swappedPointIdx2 + ", " + bestCrossingNumberFound + ", " + Arrays.deepToString(vertexPointCombinations) + ", " + Arrays.toString(pointVertexCombinations));
+        if (useHashSet) {
+            stringBuilder.setLength(0);
+            for (Integer pointVertexCombination : pointVertexCombinations) {
+                stringBuilder.append(pointVertexCombination);
+            }
+            if (set.contains(stringBuilder.toString())) return Integer.MAX_VALUE;
+            else {
+                set.add(stringBuilder.toString());
+            }
+        }
 
         if (colinearEdge[0] != null) {
-            if (colinearEdge[0].v1() == verticesToChange[pointVertexCombinations[swappedPointIdx1]] || colinearEdge[0].v1() == verticesToChange[pointVertexCombinations[swappedPointIdx2]]
-                    || colinearEdge[0].v2() == verticesToChange[pointVertexCombinations[swappedPointIdx1]] || colinearEdge[0].v2() == verticesToChange[pointVertexCombinations[swappedPointIdx2]]
-                    || colinearEdge[1].v1() == verticesToChange[pointVertexCombinations[swappedPointIdx1]] || colinearEdge[1].v1() == verticesToChange[pointVertexCombinations[swappedPointIdx2]]
-                    || colinearEdge[1].v2() == verticesToChange[pointVertexCombinations[swappedPointIdx1]] || colinearEdge[1].v2() == verticesToChange[pointVertexCombinations[swappedPointIdx2]]) {
+            if (colinearEdge[0].v1() == pointVertexCombinations[swappedPointIdx1] || colinearEdge[0].v1() == pointVertexCombinations[swappedPointIdx2]
+                    || colinearEdge[0].v2() == pointVertexCombinations[swappedPointIdx1] || colinearEdge[0].v2() == pointVertexCombinations[swappedPointIdx2]
+                    || colinearEdge[1].v1() == pointVertexCombinations[swappedPointIdx1] || colinearEdge[1].v1() == pointVertexCombinations[swappedPointIdx2]
+                    || colinearEdge[1].v2() == pointVertexCombinations[swappedPointIdx1] || colinearEdge[1].v2() == pointVertexCombinations[swappedPointIdx2]) {
                 colinearEdge[0] = null;
                 colinearEdge[1] = null;
             }
@@ -98,19 +140,50 @@ public class ExactPruningUB {
         }
 
         return calculateNrOfCrossings(bestCrossingNumberFound);
+        //int nrCrossings = calculateNrOfCrossings(bestCrossingNumberFound);
+        /*if (nrCrossings == Integer.MAX_VALUE) return nrCrossings;
+        else {
+            for (Edge edge : graph.getEdges()) {
+                int outgoingEndpoint = -1;
+                if (isConvex) {
+                    if (!isVertexInPartition[edge.v1()]) {
+                        outgoingEndpoint = edge.v1();
+                    } else if (!isVertexInPartition[edge.v2()]) {
+                        outgoingEndpoint = edge.v2();
+                    } else continue;
+                }
+
+                // Through all points while an edge might cross through multiple partitions
+                for (Point[] pointPartition : pointPartitions) {
+                    if (!Arrays.equals(pointPartition, this.pointPartition)) {
+                        for (Point point : pointPartition) {
+                            if (isConvex && !point.equals(vertexPointCombinations[outgoingEndpoint])) {
+                                if (Utils.determinant(vertexPointCombinations[edge.v1()].x(), vertexPointCombinations[edge.v1()].y(), vertexPointCombinations[edge.v2()].x(), vertexPointCombinations[edge.v2()].y(),
+                                        point.x(), point.y()) == 0) {
+                                    if ((point.x() < vertexPointCombinations[edge.v1()].x() && point.x() > vertexPointCombinations[edge.v2()].x()) || (point.x() > vertexPointCombinations[edge.v1()].x() && point.x() < vertexPointCombinations[edge.v2()].x())
+                                            || (point.y() < vertexPointCombinations[edge.v1()].y() && point.y() > vertexPointCombinations[edge.v2()].y()) || (point.y() > vertexPointCombinations[edge.v1()].y() && point.y() < vertexPointCombinations[edge.v2()].y())) {
+                                        return Integer.MAX_VALUE;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return nrCrossings;
+        }*/
     }
 
     private int calculateNrOfCrossings(int bestCrossingNumberFound) {
         int crossingNumber = 0;
 
-        System.out.println("Calculating nr crossings for " + Arrays.toString(vertexPointCombinations));
         for (int i = 0; i < graph.getNrOfEdges(); i++) {
             Edge edge1 = graph.getEdges()[i];
             for (int j = i + 1; j < graph.getNrOfEdges(); j++) {
                 Edge edge2 = graph.getEdges()[j];
                 int crossing = Utils.doEdgesCross(vertexPointCombinations[edge1.v1()].x(), vertexPointCombinations[edge1.v1()].y(), vertexPointCombinations[edge1.v2()].x(), vertexPointCombinations[edge1.v2()].y(),
                         vertexPointCombinations[edge2.v1()].x(), vertexPointCombinations[edge2.v1()].y(), vertexPointCombinations[edge2.v2()].x(), vertexPointCombinations[edge2.v2()].y());
-                //System.out.println(edge1 + ", " + edge2 + ", " + crossing);
                 if (crossing == -1) {
                     colinearEdge[0] = edge1;
                     colinearEdge[1] = edge2;

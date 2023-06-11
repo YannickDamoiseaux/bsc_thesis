@@ -20,14 +20,15 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class LowerboundSAT implements Solver {
-    private final Graph graph;
-    private final Random rand = new Random(0);
+public class LowerboundSAT extends Solver {
+    private final Random rand = new Random();
+    private int lowerBoundFound;
 
     public LowerboundSAT(String src) throws URISyntaxException, FileNotFoundException {
         this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
         System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
     }
+    public LowerboundSAT() {}
 
     public double solve() {
         Literal[][] verticesToPointsAssigned = new Literal[graph.getNrOfVertices()][graph.getNrOfPoints()];
@@ -95,6 +96,7 @@ public class LowerboundSAT implements Solver {
         int crossingNumber;
         boolean possible = true;
         for (crossingNumber = 0; crossingNumber < 30; crossingNumber++) {
+            if (Thread.currentThread().isInterrupted()) return lowerBoundFound;
             System.out.println("***** CROSSING NUMBER = " + crossingNumber + " ****");
             List<CrossingData> crossingsTemp = new ArrayList<>(crossings);
             //miniSat.loadState(initialState);
@@ -113,6 +115,7 @@ public class LowerboundSAT implements Solver {
 
             //SolverState tempState = miniSat.saveState();
             for (int iteration = lastIndex; iteration < nrOfDivisions; iteration++) {
+                if (Thread.currentThread().isInterrupted()) return lowerBoundFound;
                 System.out.println("Iteration: " + iteration + "/" + nrOfDivisions);
                 //miniSat.loadState(tempState);
                 miniSat.loadState(initialState);
@@ -135,6 +138,7 @@ public class LowerboundSAT implements Solver {
                 }
                 Literal[][] crossingLiterals = new Literal[crossingDataSubset.length][crossingNumber];
                 for (int i = 0; i < crossingDataSubset.length; i++) {
+                    if (Thread.currentThread().isInterrupted()) return lowerBoundFound;
                     CrossingData crossing = crossingDataSubset[i];
                     for (int j = 0; j < crossingNumber; j++) {
                         crossingLiterals[i][j] = f.literal("c_" + i + "_" + j, true);
@@ -144,6 +148,7 @@ public class LowerboundSAT implements Solver {
                 }
 
                 for (int i = 0; i < crossingNumber; i++) {
+                    if (Thread.currentThread().isInterrupted()) return lowerBoundFound;
                     ArrayList<Literal> literals = new ArrayList<>();
 
                     for (Literal[] crossingLiteral : crossingLiterals) {
@@ -164,6 +169,7 @@ public class LowerboundSAT implements Solver {
 
                 System.out.println("Solving...");
                 if (miniSat.sat() == Tristate.FALSE) {
+                    lowerBoundFound++;
                     System.out.println("Not possible to do it with " + crossingNumber + " crossing(s)");
                     possible = false;
                     lastIndex = iteration;
@@ -181,6 +187,21 @@ public class LowerboundSAT implements Solver {
             System.out.println("At least " + (crossingNumber+1) + " crossing(s) are needed.");
             return crossingNumber+1;
         }
+    }
+
+    @Override
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+
+    @Override
+    public Solver newEmptyInstance() {
+        return new LowerboundSAT();
+    }
+
+    @Override
+    public double getOptimalCrossingNumber() {
+        return lowerBoundFound;
     }
 
     /*private int addCrossingClauses(MiniSat miniSat, FormulaFactory f, Literal[][] verticesToPointsAssigned, Literal[][] crossingLiterals, List<CrossingData> crossingsDivision, int crossingNumber, int currentLiteralIdx) {

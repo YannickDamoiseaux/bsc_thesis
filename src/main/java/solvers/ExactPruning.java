@@ -10,9 +10,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class ExactPruning implements Solver {
-    private final Graph graph;
-
+public class ExactPruning extends ExactSolver {
     public ExactPruning(String src) throws URISyntaxException, FileNotFoundException {
         this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
         System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
@@ -20,20 +18,40 @@ public class ExactPruning implements Solver {
     public ExactPruning(Graph graph) {
         this.graph = graph;
     }
+    public ExactPruning() {}
 
-    private int[] pointVertexCombinations;
+    private Integer[] pointVertexCombinations;
     private Point[] vertexPointCombinations;
     private final Edge[] colinearEdge = new Edge[2];
-    int count = 0;
-    int count_tot = 0;
+    private Set<List<Integer>> set;
+    private boolean useHashSet;
+    private int optimalCrossingNumber;
+    private Random rand = new Random(0);
 
     public double solve() {
-        pointVertexCombinations = new int[graph.getNrOfPoints()];
-        vertexPointCombinations = new Point[graph.getNrOfVertices()];
-        for (int i = 0; i < vertexPointCombinations.length; i++) {
-            vertexPointCombinations[i] = graph.getPoints()[i];
-        }
+        return solve(Integer.MAX_VALUE);
+    }
 
+    @Override
+    public Solver newEmptyInstance() {
+        return new ExactPruning();
+    }
+
+    public double solve(int upperbound) {
+        useHashSet = graph.getNrOfPoints()-graph.getNrOfVertices() > graph.getNrOfVertices()/2;
+        if (useHashSet) set = new HashSet<>();
+        pointVertexCombinations = new Integer[graph.getNrOfPoints()];
+        vertexPointCombinations = new Point[graph.getNrOfVertices()];
+        ArrayList<Integer> indicesToChooseFrom = new ArrayList<>();
+        for (int i = 0; i < graph.getNrOfPoints(); i++) {
+            indicesToChooseFrom.add(i);
+        }
+        for (int i = 0; i < vertexPointCombinations.length; i++) {
+            int idx = rand.nextInt(indicesToChooseFrom.size());
+            vertexPointCombinations[i] = graph.getPoints()[indicesToChooseFrom.get(idx)];
+            indicesToChooseFrom.remove(idx);
+        }
+        //System.out.println(Arrays.toString(vertexPointCombinations));
         int[] p = new int[graph.getNrOfPoints()];
         int i, j;
         for(i = 0; i < graph.getNrOfVertices(); i++) {
@@ -45,12 +63,14 @@ public class ExactPruning implements Solver {
             p[i] = 0;
         }
 
-        int optimalCrossingNumber = calculateNrOfCrossings(Integer.MAX_VALUE);
+        int inital = calculateNrOfCrossings(upperbound);
+        optimalCrossingNumber = (inital == Integer.MAX_VALUE ? upperbound : inital);
+        if (optimalCrossingNumber == 0) return optimalCrossingNumber;
 
-        System.out.println("Initial: " + optimalCrossingNumber);
         i = 1;
         // Source: https://www.quickperm.org/quickperm.php
         while(i < pointVertexCombinations.length) {
+            if (Thread.currentThread().isInterrupted()) return optimalCrossingNumber;
             if (p[i] < i) {
                 j = i % 2 * p[i];
 
@@ -58,8 +78,8 @@ public class ExactPruning implements Solver {
                     int crossingNumber = getNrOfCrossings(i, j, optimalCrossingNumber);
                     if (crossingNumber < optimalCrossingNumber) {
                         optimalCrossingNumber = crossingNumber;
-                        System.out.println("New best: " + optimalCrossingNumber);
-                        //System.out.println(Arrays.toString(pointVertexCombinations));
+                        //System.out.println("New best: " + optimalCrossingNumber);
+                        //System.out.println(Arrays.toString(vertexPointCombinations));
                         if (optimalCrossingNumber == 0) break;
                     }
                 }
@@ -70,12 +90,11 @@ public class ExactPruning implements Solver {
                 i++;
             }
         }
-        System.out.println((double)count/count_tot);
+
         return optimalCrossingNumber;
     }
 
     private int getNrOfCrossings(int swappedPointIdx1, int swappedPointIdx2, int bestCrossingNumberFound) {
-        count_tot++;
         if (pointVertexCombinations[swappedPointIdx1] != -1) {
             vertexPointCombinations[pointVertexCombinations[swappedPointIdx1]] = graph.getPoints()[swappedPointIdx2];
         }
@@ -97,6 +116,11 @@ public class ExactPruning implements Solver {
             else return Integer.MAX_VALUE;
         }
 
+        if (useHashSet) {
+            if (set.contains(List.of(pointVertexCombinations))) return Integer.MAX_VALUE;
+            else set.add(List.of(pointVertexCombinations));
+        }
+
         return calculateNrOfCrossings(bestCrossingNumberFound);
     }
 
@@ -110,7 +134,6 @@ public class ExactPruning implements Solver {
                 int crossing = Utils.doEdgesCross(vertexPointCombinations[edge1.v1()].x(), vertexPointCombinations[edge1.v1()].y(), vertexPointCombinations[edge1.v2()].x(), vertexPointCombinations[edge1.v2()].y(),
                         vertexPointCombinations[edge2.v1()].x(), vertexPointCombinations[edge2.v1()].y(), vertexPointCombinations[edge2.v2()].x(), vertexPointCombinations[edge2.v2()].y());
                 if (crossing == -1) {
-                    count++;
                     colinearEdge[0] = edge1;
                     colinearEdge[1] = edge2;
                     return Integer.MAX_VALUE;
@@ -123,4 +146,12 @@ public class ExactPruning implements Solver {
         }
         return crossingNumber;
     }
+
+    @Override
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+
+    public double getOptimalCrossingNumber() { return optimalCrossingNumber; }
+
 }

@@ -12,20 +12,30 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
-public class ExactBIP implements Solver {
-    private final Graph graph;
-
+public class ExactBIP extends Solver {
     public ExactBIP(String src) throws URISyntaxException, FileNotFoundException {
         this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
     }
+    public ExactBIP() {}
+
+    //private static IloCplex cplex;
 
     public double solve() {
-        try(IloCplex cplex = new IloCplex()) {
+        /*if (cplex == null) {
+            try {
+                cplex = new IloCplex();
+                cplex.setParam(IloCplex.Param.Threads, 1);
+                cplex.setOut(null);
+            } catch (IloException e) {
+                throw new RuntimeException(e);
+            }
+        }*/
+        try (IloCplex cplex = new IloCplex()) {
+            cplex.setParam(IloCplex.Param.Threads, 1);
+            cplex.setOut(null);
+            long startTime = System.nanoTime();
             IloIntVar[][] vars = new IloIntVar[graph.getNrOfVertices()][graph.getNrOfPoints()];
             for (int i = 0; i < graph.getNrOfVertices(); i++) {
                 IloLinearIntExpr expr = cplex.linearIntExpr();
@@ -79,6 +89,9 @@ public class ExactBIP implements Solver {
             List<CrossingData> colinear = crossingAndColinear[1];
 
             for (CrossingData crossing : crossings) {
+                if (Thread.currentThread().isInterrupted()) {
+                    return Integer.MAX_VALUE;
+                }
                 IloIntVar var = cplex.intVar(0, 1, "x_" + crossing.e1() + "_" + crossing.p1() + "_" + crossing.p2()
                         + crossing.e2() + "_" + crossing.p3() + "_" + crossing.p4());
 
@@ -104,6 +117,9 @@ public class ExactBIP implements Solver {
             }
 
             for (CrossingData colinearity : colinear) {
+                if (Thread.currentThread().isInterrupted()) {
+                    return Integer.MAX_VALUE;
+                }
                 IloIntVar var1 = edgePointCombination[colinearity.e1()][colinearity.p1()][colinearity.p2()];
                 IloIntVar var2 = edgePointCombination[colinearity.e2()][colinearity.p3()][colinearity.p4()];
                 IloIntVar new_var = cplex.intVar(0, 1);
@@ -128,13 +144,36 @@ public class ExactBIP implements Solver {
             }
 
             cplex.addMinimize(cplex.sum(objExpressions.toArray(new IloLinearIntExpr[0])));
+            long stopTime = System.nanoTime();
+            int timeLeft = (int) (30000-((stopTime - startTime)/1000000));
+            if (timeLeft <= 0) {
+                return Integer.MAX_VALUE;
+            }
+            cplex.setParam(IloCplex.Param.TimeLimit, timeLeft/1000.0);
             // solve and retrieve optimal solution
             if (cplex.solve()) {
                 return cplex.getObjValue();
             }
-        } catch (IloException e) {
-            e.printStackTrace();
+            else {
+                return cplex.getObjValue();
+            }
+        } catch (IloException ex) {
+            throw new RuntimeException(ex);
         }
+    }
+
+    @Override
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+
+    @Override
+    public Solver newEmptyInstance() {
+        return new ExactBIP();
+    }
+
+    @Override
+    public double getOptimalCrossingNumber() {
         return Integer.MAX_VALUE;
     }
 }

@@ -11,7 +11,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class ExactAnchorsNoRounding implements Solver {
+public class ExactAnchorsNoRounding extends Solver {
     private final Graph graph;
 
     public ExactAnchorsNoRounding(String src) throws URISyntaxException, FileNotFoundException {
@@ -32,8 +32,14 @@ public class ExactAnchorsNoRounding implements Solver {
         }
 
         vertexPointCombinationsOld = vertexPointCombinations.clone();
-        crossingNumberOld = calculateNumberOfCrossingStatic(vertexPointCombinations);
+        //crossingNumberOld = calculateNumberOfCrossingStatic(vertexPointCombinations);
+        int[] result = calculateNumberOfCrossingStatic(vertexPointCombinations);
+        int lastCrossingNumber = result[0];
         int optimalCrossingNumber = Integer.MAX_VALUE;
+        if (result[1] != -1) {
+            optimalCrossingNumber = lastCrossingNumber;
+        }
+
         int[] p = new int[graph.getNrOfPoints()];
         int[] a = new int[graph.getNrOfPoints()];
 
@@ -54,11 +60,12 @@ public class ExactAnchorsNoRounding implements Solver {
                 j = i % 2 * p[i];
 
                 if (!(a[i] == -1 && a[j] == -1)) {
-                    int crossingNumber = calculateNumberOfCrossings(i, j);
-                    if (crossingNumber < optimalCrossingNumber) {
-                        optimalCrossingNumber = crossingNumber;
+                    result = calculateNumberOfCrossings(i, j, lastCrossingNumber);
+                    lastCrossingNumber = result[0];
+                    if (result[1] != -1 && result[0] < optimalCrossingNumber) {
+                        optimalCrossingNumber = result[0];
                         System.out.println("New best: " + optimalCrossingNumber);
-                        //System.out.println(Arrays.toString(vertexPointCombinations));
+                        System.out.println(Arrays.toString(vertexPointCombinations));
                         if (optimalCrossingNumber == 0) break;
                     }
                     tmp = a[j];
@@ -76,12 +83,16 @@ public class ExactAnchorsNoRounding implements Solver {
         return optimalCrossingNumber;
     }
 
+    @Override
+    public Solver newEmptyInstance() {
+        return null;
+    }
+
     LinkedList<AnchorEdgeNew>[] layers;
     Point[] vertexPointCombinations;
     Point[] vertexPointCombinationsOld;
-    int crossingNumberOld;
 
-    public int calculateNumberOfCrossingStatic(Point[] vertexPointCombinations) {
+    public int[] calculateNumberOfCrossingStatic(Point[] vertexPointCombinations) {
         layers = new LinkedList[graph.getWidth()];
 
         for (int i = 0; i < layers.length; i++) {
@@ -102,17 +113,17 @@ public class ExactAnchorsNoRounding implements Solver {
                 AnchorEdgeNew e1 = layer.get(e1Idx);
                 for (int e2Idx = e1Idx + 1; e2Idx < layer.size(); e2Idx++) {
                     AnchorEdgeNew e2 = layer.get(e2Idx);
-                    int doEdgesCross = doEdgesCross(vertexPointCombinations, l, e1, e2);
+                    int doEdgesCross = doEdgesCross(vertexPointCombinations, l, e1, e2, false);
                     if (doEdgesCross == 1) crossingNumber++;
-                    else if (doEdgesCross == -1) return Integer.MAX_VALUE;
+                    else if (doEdgesCross == -1) return new int[]{crossingNumber, -1};
                 }
             }
         }
 
-        return crossingNumber;
+        return new int[]{crossingNumber, 1};
     }
 
-    public int calculateNumberOfCrossings(int swappedVertex1, int swappedVertex2) {
+    public int[] calculateNumberOfCrossings(int swappedVertex1, int swappedVertex2, int lastCrossingNumber) {
         Point temp = vertexPointCombinations[swappedVertex1];
         vertexPointCombinations[swappedVertex1] = vertexPointCombinations[swappedVertex2];
         vertexPointCombinations[swappedVertex2] = temp;
@@ -123,16 +134,23 @@ public class ExactAnchorsNoRounding implements Solver {
             else if (edge.v2() == swappedVertex1 || edge.v2() == swappedVertex2) edgesToRemove.add(edge);
         }
 
+        boolean print = Arrays.equals(vertexPointCombinations, new Point[]{new Point(2, 0), new Point(0, 3), new Point(3, 2), new Point(0, 0), new Point(2, 2), new Point(2, 3), new Point(3, 0)});
+        //boolean print = false;
+        
+        int feasible = 1;
+        if (print) System.out.println(Arrays.toString(edgesToRemove.toArray()));
         for (Edge edge : edgesToRemove) {
             List<AnchorEdgePackage> anchorEdgesToRemove = getAnchorGraphOfEdge(vertexPointCombinationsOld, edge);
+            if (print) System.out.println(Arrays.toString(anchorEdgesToRemove.toArray()));
             List<AnchorEdgePackage> anchorEdgesToAdd = getAnchorGraphOfEdge(vertexPointCombinations, edge);
+            if (print) System.out.println(Arrays.toString(anchorEdgesToAdd.toArray()));
 
             for (AnchorEdgePackage anchorEdgePackage : anchorEdgesToRemove) {
                 for (int i = 0; i < layers[anchorEdgePackage.x()].size(); i++) {
                     AnchorEdgeNew anchorEdge = layers[anchorEdgePackage.x()].get(i);
                     if (anchorEdge.equals(anchorEdgePackage.anchorEdge())) {
                         if (anchorEdge.isEdgeCausingCrossing()) {
-                            crossingNumberOld -= anchorEdge.getNrOfCrossingCausing();
+                            lastCrossingNumber -= anchorEdge.getNrOfCrossingCausing();
                             for (AnchorEdgeNew otherEdge : anchorEdge.getOtherEdgeCausingCrossing()) {
                                 otherEdge.removeEdgeCausingCrossing(anchorEdge);
                             }
@@ -142,67 +160,101 @@ public class ExactAnchorsNoRounding implements Solver {
                     }
                 }
             }
+            if (print) System.out.println("TEMP " + lastCrossingNumber);
             for (AnchorEdgePackage anchorEdgePackage : anchorEdgesToAdd) {
                 for (int i = 0; i < layers[anchorEdgePackage.x()].size(); i++) {
                     AnchorEdgeNew anchorEdge = layers[anchorEdgePackage.x()].get(i);
-                    int doEdgesCross = doEdgesCross(vertexPointCombinations, anchorEdgePackage.x(), anchorEdgePackage.anchorEdge(), anchorEdge);
-                    if (doEdgesCross == 1) crossingNumberOld++;
-                    else if (doEdgesCross == -1) return Integer.MAX_VALUE;
+                    int doEdgesCross = doEdgesCross(vertexPointCombinations, anchorEdgePackage.x(), anchorEdgePackage.anchorEdge(), anchorEdge, false);
+                    if (doEdgesCross == 1) lastCrossingNumber++;
+                    else if (doEdgesCross == -1) {
+                        if (print) System.out.println(anchorEdgePackage.anchorEdge() + ", " + anchorEdge + " INFEASIBLE");
+                        feasible = -1;
+                        break;
+                    }
                 }
                 layers[anchorEdgePackage.x()].add(anchorEdgePackage.anchorEdge());
             }
         }
 
+        if (feasible == 1) {
+            lastCrossingNumber = 0;
+            outer:
+            for (int i = 0; i < layers.length; i++) {
+                for (int a = 0; a < layers[i].size(); a++) {
+                    for (int b = a + 1; b < layers[i].size(); b++) {
+                        int doEdgesCross = doEdgesCross(vertexPointCombinations, i, layers[i].get(a), layers[i].get(b), print);
+                        if (doEdgesCross == 1) lastCrossingNumber++;
+                        else if (doEdgesCross == -1) {
+                            feasible = -1;
+                            break outer;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (print) System.out.println("CR " +lastCrossingNumber);
         vertexPointCombinationsOld = vertexPointCombinations.clone();
-        return crossingNumberOld;
+        return new int[]{lastCrossingNumber, feasible};
     }
 
-    private int doEdgesCross(Point[] vertexPointCombinations, int layer, AnchorEdgeNew e1, AnchorEdgeNew e2) {
+    private int doEdgesCross(Point[] vertexPointCombinations, int layer, AnchorEdgeNew e1, AnchorEdgeNew e2, boolean print) {
+        //if (print && e1.v1() > 2.3 && e1.v1() < 2.35) System.out.println(e1 + ", " + e2);
+        //else if (print && e2.v1() > 2.30 && e2.v1() < 2.35) System.out.println(e1 + ", " + e2);
         if (e1.v1() == e2.v1() && e1.v2() == e2.v2()) return -1;
         if (e2.v1() > e1.v1() && e1.v2() > e2.v2()) {
             e1.addEdgeCausingCrossing(e2);
             e2.addEdgeCausingCrossing(e1);
+            if (print) System.out.println("1-1");
             return 1;
         }
         else if (e1.v1() > e2.v1() && e2.v2() > e1.v2()) {
             e1.addEdgeCausingCrossing(e2);
             e2.addEdgeCausingCrossing(e1);
+            if (print) System.out.println("1-2");
             return 1;
         }
         else if (e1.v1() < 0) {
             if (e2.v1() < Math.abs(e1.v1()) && e2.v1() > Math.abs(e1.v2())) {
                 e1.addEdgeCausingCrossing(e2);
                 e2.addEdgeCausingCrossing(e1);
+                if (print) System.out.println("1-3");
                 return 1;
             }
             else if (e2.v1() > Math.abs(e1.v1()) && e2.v1() < Math.abs(e1.v2())) {
                 e1.addEdgeCausingCrossing(e2);
                 e2.addEdgeCausingCrossing(e1);
+                if (print) System.out.println("1-4");
                 return 1;
             }
         } else if (e2.v1() < 0) {
             if (e1.v1() < Math.abs(e2.v1()) && e1.v1() > Math.abs(e2.v2())) {
                 e1.addEdgeCausingCrossing(e2);
                 e2.addEdgeCausingCrossing(e1);
+                if (print) System.out.println("1-5");
                 return 1;
             }
             else if (e1.v1() > Math.abs(e2.v1()) && e1.v1() < Math.abs(e2.v2())) {
                 e1.addEdgeCausingCrossing(e2);
                 e2.addEdgeCausingCrossing(e1);
+                if (print) System.out.println("1-6");
                 return 1;
             }
         }
         else if (e1.v2() == e2.v2()) {
             for (Point point : vertexPointCombinations) {
                 if (point.x() == layer + 1 && point.y() == e1.v2()) {
+                    if (print) System.out.println("0-1");
                     return 0;
                 }
             }
             e1.addEdgeCausingCrossing(e2);
             e2.addEdgeCausingCrossing(e1);
+            if (print) System.out.println("1-7");
             return 1;
         }
 
+        if (print) System.out.println("0-2");
         return 0;
     }
 
@@ -237,6 +289,16 @@ public class ExactAnchorsNoRounding implements Solver {
             }
         }
         return anchorEdges;
+    }
+
+    @Override
+    public double getOptimalCrossingNumber() {
+        return 0;
+    }
+
+    @Override
+    public String getName() {
+        return getClass().getSimpleName();
     }
 }
 

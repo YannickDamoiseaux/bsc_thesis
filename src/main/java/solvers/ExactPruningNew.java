@@ -11,27 +11,32 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class ExactPruningNew implements Solver {
-    private final Graph graph;
-
+public class ExactPruningNew extends Solver {
     public ExactPruningNew(String src) throws URISyntaxException, FileNotFoundException {
         this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
         System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
     }
+    public ExactPruningNew() {}
 
-    private int[] pointVertexCombinations;
+    private Integer[] pointVertexCombinations;
     private Point[] vertexPointCombinations;
 
     private List<EdgeCrossing>[] edgesPerVertex;
     private EdgeCrossing[] edges;
     private ArrayList<Edge[]> crossings = new ArrayList<>();
     private Edge[] colinearEdge = new Edge[2];
+    private int optimalCrossingNumber;
+
+    private Set<List<Integer>> set;
+    private boolean useHashSet;
 
     public double solve() {
+        useHashSet = graph.getNrOfPoints()-graph.getNrOfVertices() > graph.getNrOfVertices()/2;
+        if (useHashSet) set = new HashSet<>();
         edgesPerVertex = new List[graph.getNrOfVertices()];
         edges = new EdgeCrossing[graph.getNrOfEdges()];
 
-        pointVertexCombinations = new int[graph.getNrOfPoints()];
+        pointVertexCombinations = new Integer[graph.getNrOfPoints()];
         vertexPointCombinations = new Point[graph.getNrOfVertices()];
         for (int i = 0; i < vertexPointCombinations.length; i++) {
             vertexPointCombinations[i] = graph.getPoints()[i];
@@ -58,15 +63,14 @@ public class ExactPruningNew implements Solver {
 
         int[] result = calculateNrOfCrossingsInitial();
         int lastCrossingNumber = result[0];
-        int optimalCrossingNumber = Integer.MAX_VALUE;
-        if (result[1] != -1) {
-            optimalCrossingNumber = lastCrossingNumber;
-            System.out.println("Initial: " + lastCrossingNumber);
-        }
-        else System.out.println("Initial: " + lastCrossingNumber + " (co-linear)");
+        optimalCrossingNumber = Integer.MAX_VALUE;
+        if (result[1] != -1) optimalCrossingNumber = lastCrossingNumber;
+        if (optimalCrossingNumber == 0) return optimalCrossingNumber;
+
         i = 1;
         // Source: https://www.quickperm.org/quickperm.php
         while(i < pointVertexCombinations.length) {
+            if (Thread.currentThread().isInterrupted()) return optimalCrossingNumber;
             if (p[i] < i) {
                 j = i % 2 * p[i];
 
@@ -76,7 +80,7 @@ public class ExactPruningNew implements Solver {
                     lastCrossingNumber = result[0];
                     if (result[1] != -1 && result[0] < optimalCrossingNumber) {
                         optimalCrossingNumber = result[0];
-                        System.out.println("New best: " + optimalCrossingNumber);
+                        //System.out.println("New best: " + optimalCrossingNumber);
                         //System.out.println(Arrays.toString(vertexPointCombinations));
                         if (optimalCrossingNumber == 0) break;
                     }
@@ -89,6 +93,16 @@ public class ExactPruningNew implements Solver {
             }
         }
 
+        return optimalCrossingNumber;
+    }
+
+    @Override
+    public Solver newEmptyInstance() {
+        return new ExactPruningNew();
+    }
+
+    @Override
+    public double getOptimalCrossingNumber() {
         return optimalCrossingNumber;
     }
 
@@ -126,6 +140,11 @@ public class ExactPruningNew implements Solver {
                 colinearEdge[0] = null;
                 colinearEdge[1] = null;
             } else return new int[]{lastCrossingNumber, -1};
+        }
+
+        if (useHashSet) {
+            if (set.contains(List.of(pointVertexCombinations))) return new int[]{lastCrossingNumber, -1};
+            else set.add(List.of(pointVertexCombinations));
         }
 
         //if (crossingNumber == lastCrossingNumber) return crossingNumber;
@@ -231,5 +250,10 @@ public class ExactPruningNew implements Solver {
         }
 
         return new int[]{crossingNumber, 1};
+    }
+
+    @Override
+    public String getName() {
+        return getClass().getSimpleName();
     }
 }
