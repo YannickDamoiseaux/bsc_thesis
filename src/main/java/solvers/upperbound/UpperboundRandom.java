@@ -41,7 +41,7 @@ public class UpperboundRandom extends Upperbound {
             double crossingNumber = super.solve(pointPartitions, vertexPartitions, useDistanceMetric, startTime);
             if (crossingNumber < upperbound) {
                 upperbound = crossingNumber;
-                System.out.println("New best: "+ upperbound);
+                //System.out.println("New best: "+ upperbound);
                 if (upperbound == 0) return upperbound;
             }
         }

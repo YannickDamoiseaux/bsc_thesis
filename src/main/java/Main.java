@@ -10,8 +10,8 @@ import java.util.concurrent.*;
 public class Main {
     public static void main(String[] args) throws IOException, URISyntaxException {
         long startTime = System.nanoTime();
-        double bestCrossingNumber = new UpperboundMetis("generated/test21.json", 12, true, true).solve();
-        //double bestCrossingNumber = new UpperboundRandom("generated/test2.json",6,true).solve();
+        //double bestCrossingNumber = new ExactPruning("generated/test7.json").solve();
+        double bestCrossingNumber = new UpperboundMetis("generated/test12.json", true, false).solve();
         //double bestCrossingNumber = new ExactPruning("generated/test10.json").solve();
         /*double bestCrossingNumber = Integer.MAX_VALUE;
         for (int i = 0; i < 10000; i++) {

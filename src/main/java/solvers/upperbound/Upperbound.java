@@ -30,6 +30,7 @@ public class Upperbound extends UpperBoundSolver {
         }
 
         int[] pointVertexPartitionsAssignation =  vertexPartitionAssignedToPointPartition(vertexPartitions, pointPartitions, vertexIsInPartition, useDistanceMetric);
+        if (pointVertexPartitionsAssignation == null) return Integer.MAX_VALUE;
         int[] vertexPointPartitionsAssignation = new int[pointVertexPartitionsAssignation.length];
         for (int i = 0; i < pointVertexPartitionsAssignation.length; i++) {
             vertexPointPartitionsAssignation[pointVertexPartitionsAssignation[i]] = i;
@@ -151,6 +152,7 @@ public class Upperbound extends UpperBoundSolver {
             i = 1;
             // Source: https://www.quickperm.org/quickperm.php
             while (i < a.length) {
+                if (Thread.currentThread().isInterrupted()) return null;
                 if (p[i] < i) {
                     j = i % 2 * p[i];
                     tmp = a[j];

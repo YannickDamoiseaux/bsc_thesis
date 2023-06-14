@@ -16,11 +16,19 @@ public class UpperboundMetis extends Upperbound {
     private final boolean convexSolver;
     private static JepConfig jepConfig;
 
-    private double upperbound;
+    private double upperbound = Integer.MAX_VALUE;
 
     public UpperboundMetis(String src, int nrPartitions, boolean useDistanceMetric, boolean convexSolver) throws URISyntaxException, FileNotFoundException {
         super(src);
         this.nrPartitions = nrPartitions;
+        this.useDistanceMetric = useDistanceMetric;
+        this.convexSolver = convexSolver;
+        this.nrVerticesPerPartition = graph.getNrOfVertices()/nrPartitions;
+        System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
+    }
+    public UpperboundMetis(String src, boolean useDistanceMetric, boolean convexSolver)throws URISyntaxException, FileNotFoundException {
+        super(src);
+        this.nrPartitions = -1;
         this.useDistanceMetric = useDistanceMetric;
         this.convexSolver = convexSolver;
         this.nrVerticesPerPartition = -1;
@@ -49,7 +57,12 @@ public class UpperboundMetis extends Upperbound {
     public double solve() {
         Long startTime = System.nanoTime();
         if (nrPartitions == -1) {
-            nrPartitions = graph.getNrOfVertices()/nrVerticesPerPartition;
+            if (nrVerticesPerPartition == -1) {
+                if (graph.getNrOfVertices() <= 29) nrVerticesPerPartition = 4;
+                else if (graph.getNrOfVertices() <= 56) nrVerticesPerPartition = 7;
+                else nrVerticesPerPartition = 10;
+            }
+            nrPartitions = graph.getNrOfVertices() / nrVerticesPerPartition;
         }
         ArrayList<ArrayList<Integer>> edgesPerVertex = new ArrayList<>();
         for (int i = 0; i < graph.getNrOfVertices(); i++) {
@@ -111,7 +124,6 @@ public class UpperboundMetis extends Upperbound {
                 }
             }
 
-            upperbound = Integer.MAX_VALUE;
             boolean[] boolArray = {true, false};
             for (Boolean bool1 : boolArray) {
                 for (Boolean bool2 : boolArray) {
@@ -119,7 +131,10 @@ public class UpperboundMetis extends Upperbound {
                     if (convexSolver) {
                         List<Point[]> pointPartitions = bisectionPartitionConvex(vertexPartitions, pointsTooMuch, bool1, bool2);
                         double crossingNumber = super.solve(pointPartitions, vertexPartitions, useDistanceMetric, startTime);
-                        if (crossingNumber < upperbound) upperbound = crossingNumber;
+                        if (crossingNumber < upperbound) {
+                            upperbound = crossingNumber;
+                            if (upperbound == 0) return upperbound;
+                        }
                     }
                     else {
                         List<Point[]> pointPartitions = bisectionPartitionNonConvex(vertexPartitions, pointsTooMuch, bool1, bool2);

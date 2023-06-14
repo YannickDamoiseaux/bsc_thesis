@@ -1,12 +1,8 @@
 package experiments;
 
 import graph.Graph;
-import jep.JepConfig;
-import jep.MainInterpreter;
-import jep.Run;
-import jep.SharedInterpreter;
 import solvers.*;
-import solvers.upperbound.Upperbound;
+import solvers.notused.ExactPruningRecursive;
 import solvers.upperbound.UpperboundMetis;
 import solvers.upperbound.UpperboundRandom;
 
@@ -15,14 +11,11 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Experiments {
     public static void main(String[] args) {
-        exact_1_1();
-        exact_1_2();
-        exact_2_1();
-        exact_2_2();
+        upperbound_2();
+        upperbound_3();
     }
 
     private static void test() {
@@ -148,10 +141,9 @@ public class Experiments {
     }
 
     private static void upperbound_1() {
-        UpperBoundSolver[] solvers = {new UpperboundMetis(true, true), new UpperboundMetis(true, false)};
-        int[] vertices = {20, 29};// 47, 65, 83, 101};
-        int[] nrVerticesPerPartition = {4, 6, 8, 10};
-        ArrayList<Callable<Object>> runnables = new ArrayList<>();
+        /*UpperBoundSolver[] solvers = {new UpperboundMetis(true, true), new UpperboundMetis(true, false)};
+        int[] vertices = {20, 29}; //{20, 29, 56, 83, 110};
+        int[] nrVerticesPerPartition = {4, 7, 10};
         for (int v : vertices) {
             for (int nV : nrVerticesPerPartition) {
                 for (UpperBoundSolver s : solvers) {
@@ -162,17 +154,56 @@ public class Experiments {
                     }
                 }
             }
+        }*/
+        try {
+            runConfigurationUpperBound(new UpperboundMetis(true, false), 56, 0.6, 3, 1.75, 7, "", Executors.newSingleThreadExecutor());
+            runConfigurationUpperBound(new UpperboundMetis(true, false), 83, 0.6, 3, 1.75, 4, "", Executors.newSingleThreadExecutor());
+            runConfigurationUpperBound(new UpperboundMetis(true, true), 83, 0.6, 3, 1.75, 4, "", Executors.newSingleThreadExecutor());
+        } catch (URISyntaxException | FileNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
+    private static void upperbound_2() {
+        Solver[] solvers = {new UpperboundMetis(true, true), new UpperboundMetis(true, false), new UpperboundRandom()};
+        int[] vertices = {5, 8, 11, 20, 29};
+        double[] densities = {0.3, 0.6};
+        for (int v : vertices) {
+            for (double d : densities) {
+                for (Solver s : solvers) {
+                    try {
+                        runConfigurationUpperBound(s, v, d, 3, 1.75, -1, "", Executors.newSingleThreadExecutor());
+                    } catch (URISyntaxException | FileNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
+    }
 
+    private static void upperbound_3() {
+        Solver[] solvers = {new UpperboundMetis(true, true), new UpperboundMetis(true, false), new UpperboundRandom()};
+        double[] resolutionPowers = {1.25, 1.75};
+        int[] nrPointsMultiplier = {1, 3};
+        for (double r : resolutionPowers) {
+            for (int p : nrPointsMultiplier) {
+                for (Solver s : solvers) {
+                    try {
+                        runConfigurationUpperBound(s, 8, 0.6, p, r, -1, "", Executors.newSingleThreadExecutor());
+                    } catch (URISyntaxException | FileNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
+    }
 
     private static void runConfiguration(Solver solver, int nrVertices, double density, int nrPointsMultiplier, double resolutionPower, String extraIdentifier, ExecutorService executor) throws URISyntaxException, FileNotFoundException {
         int[] result = new int[100];
         double[] time = new double[100];
 
-        for (int i = 0; i < result.length; i++ ) {
-            System.out.println("Iteration " + (i+1) + "/100");
+        for (int i = 0; i < result.length; i++) {
+            System.out.println("Iteration " + (i + 1) + "/100");
             Graph graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(Experiments.class.getClassLoader().getResource("experiments/graphs/"+nrVertices+"_"+density+"_"+resolutionPower+"_"+nrPointsMultiplier+"/"+i+".json")).toURI()).toFile()));
 
             Solver solverTemp = solver.newEmptyInstance();
@@ -207,17 +238,19 @@ public class Experiments {
 
             UpperBoundSolver solverTemp = (UpperBoundSolver) solver.newEmptyInstance();
             solverTemp.setGraph(graph);
-            solverTemp.setNrVerticesPerPartition(nrVerticesPerPartition);
+            if (nrVerticesPerPartition != -1) solverTemp.setNrVerticesPerPartition(nrVerticesPerPartition);
 
             Future<Double> future = executor.submit(solverTemp::solve);
             try {
                 // Wait for the result with a timeout
                 result[i] = future.get(30, TimeUnit.SECONDS).intValue();
                 time[i] = solverTemp.getExecutionTime();
+                System.out.println("First " + result[i]);
             } catch (TimeoutException e) {
                 // Execution took longer than the specified timeout
                 result[i] = (int) solverTemp.getOptimalCrossingNumber();
                 time[i] = solverTemp.getExecutionTime();
+                System.out.println("Second " + result[i]);
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             } finally {

@@ -5,7 +5,7 @@ import graph.GraphGenerator;
 
 public class CreateRandomGraphs {
     public static void main(String[] args) {
-        int nrVertices = 101;
+        int nrVertices = 110;
         double density = 0.6;
         double resolutionPower = 1.75;
         int nrPointsMultiplier = 3;
