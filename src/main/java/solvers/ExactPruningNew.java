@@ -30,6 +30,8 @@ public class ExactPruningNew extends Solver {
     private Set<List<Integer>> set;
     private boolean useHashSet;
 
+    private Random rand = new Random(0);
+
     public double solve() {
         useHashSet = graph.getNrOfPoints()-graph.getNrOfVertices() > graph.getNrOfVertices()/2;
         if (useHashSet) set = new HashSet<>();
@@ -38,8 +40,19 @@ public class ExactPruningNew extends Solver {
 
         pointVertexCombinations = new Integer[graph.getNrOfPoints()];
         vertexPointCombinations = new Point[graph.getNrOfVertices()];
-        for (int i = 0; i < vertexPointCombinations.length; i++) {
+
+        /*for (int i = 0; i < vertexPointCombinations.length; i++) {
             vertexPointCombinations[i] = graph.getPoints()[i];
+            edgesPerVertex[i] = new ArrayList<>();
+        }*/
+        ArrayList<Integer> indicesToChooseFrom = new ArrayList<>();
+        for (int i = 0; i < graph.getNrOfPoints(); i++) {
+            indicesToChooseFrom.add(i);
+        }
+        for (int i = 0; i < vertexPointCombinations.length; i++) {
+            int idx = rand.nextInt(indicesToChooseFrom.size());
+            vertexPointCombinations[i] = graph.getPoints()[indicesToChooseFrom.get(idx)];
+            indicesToChooseFrom.remove(idx);
             edgesPerVertex[i] = new ArrayList<>();
         }
         for (int i = 0; i < graph.getNrOfEdges(); i++) {
@@ -48,16 +61,20 @@ public class ExactPruningNew extends Solver {
             edgesPerVertex[edge.v2()].add(edge);
             edges[i] = edge;
         }
+        Arrays.fill(pointVertexCombinations, -1);
 
         int[] p = new int[graph.getNrOfPoints()];
 
         int i, j;
-        for(i = 0; i < graph.getNrOfVertices(); i++) {
-            pointVertexCombinations[i] = i;
-            p[i] = 0;
+        for (i = 0; i < vertexPointCombinations.length; i++) {
+            for (int b = 0; b < graph.getNrOfPoints(); b++) {
+                if (graph.getPoints()[b].equals(vertexPointCombinations[i])) {
+                    pointVertexCombinations[b] = i;
+                    break;
+                }
+            }
         }
-        for (i = graph.getNrOfVertices(); i < graph.getNrOfPoints(); i++) {
-            pointVertexCombinations[i] = -1;
+        for (i = 0; i < p.length; i++) {
             p[i] = 0;
         }
 

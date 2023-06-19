@@ -1,9 +1,6 @@
 package solvers;
 
-import graph.AnchorEdgeNew;
-import graph.Edge;
-import graph.Graph;
-import graph.Point;
+import graph.*;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -11,29 +8,33 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class ExactAnchors extends Solver {
-    private final Graph graph;
-
+public class ExactAnchors extends ExactSolver {
     public ExactAnchors(String src) throws URISyntaxException, FileNotFoundException {
         this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
         System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
     }
+    public ExactAnchors() {}
 
-    private boolean useHashSet;
     private LinkedList<AnchorEdgeNew>[] layers;
     private Point[] vertexPointCombinations;
     private Point[] vertexPointCombinationsOld;
     private Integer[] pointVertexCombinations;
-    private Set<List<Integer>> set;
+
+    private final Random rand = new Random(0);
 
     public double solve() {
-        useHashSet = graph.getNrOfPoints()-graph.getNrOfVertices() > graph.getNrOfVertices()/2;
-        if (useHashSet) set = new HashSet<>();
         pointVertexCombinations = new Integer[graph.getNrOfPoints()];
         vertexPointCombinations = new Point[graph.getNrOfVertices()];
-        for (int i = 0; i < graph.getNrOfVertices(); i++) {
-            vertexPointCombinations[i] = graph.getPoints()[i];
+        ArrayList<Integer> indicesToChooseFrom = new ArrayList<>();
+        for (int i = 0; i < graph.getNrOfPoints(); i++) {
+            indicesToChooseFrom.add(i);
         }
+        for (int i = 0; i < vertexPointCombinations.length; i++) {
+            int idx = rand.nextInt(indicesToChooseFrom.size());
+            vertexPointCombinations[i] = graph.getPoints()[indicesToChooseFrom.get(idx)];
+            indicesToChooseFrom.remove(idx);
+        }
+        Arrays.fill(pointVertexCombinations, -1);
 
         layers = new LinkedList[graph.getWidth()];
 
@@ -53,12 +54,15 @@ public class ExactAnchors extends Solver {
         int[] p = new int[graph.getNrOfPoints()];
 
         int i, j;
-        for(i = 0; i < graph.getNrOfVertices(); i++) {
-            pointVertexCombinations[i] = i;
-            p[i] = 0;
+        for (i = 0; i < vertexPointCombinations.length; i++) {
+            for (int b = 0; b < graph.getNrOfPoints(); b++) {
+                if (graph.getPoints()[b].equals(vertexPointCombinations[i])) {
+                    pointVertexCombinations[b] = i;
+                    break;
+                }
+            }
         }
-        for (i = graph.getNrOfVertices(); i < graph.getNrOfPoints(); i++) {
-            pointVertexCombinations[i] = -1;
+        for (i = 0; i < p.length; i++) {
             p[i] = 0;
         }
 
@@ -74,7 +78,7 @@ public class ExactAnchors extends Solver {
                     lastCrossingNumber = result[0];
                     if (result[1] != -1 && result[0] < optimalCrossingNumber) {
                         optimalCrossingNumber = result[0];
-                        System.out.println("New best: " + optimalCrossingNumber);
+                        //System.out.println("New best: " + optimalCrossingNumber);
                         //System.out.println(Arrays.toString(vertexPointCombinations));
                         if (optimalCrossingNumber == 0) break;
                     }
@@ -143,7 +147,7 @@ public class ExactAnchors extends Solver {
             else if (edge.v2() == pointVertexCombinations[swappedPointIdx1] || edge.v2() == pointVertexCombinations[swappedPointIdx2]) edgesToRemove.add(edge);
         }
 
-        //boolean print = Arrays.equals(vertexPointCombinations, new Point[]{new Point(1,2), new Point(1,0), new Point(2,0), new Point(0,1), new Point(1,1), new Point(2,2), new Point(2,1)});
+        //boolean print = Arrays.equals(vertexPointCombinations, new Point[]{new Point(0,1), new Point(2, 1), new Point(2, 0), new Point(2, 2), new Point(1, 2), new Point(1, 0), new Point(1, 1)});
         boolean print = false;
 
         if (print) System.out.println(Arrays.toString(edgesToRemove.toArray()));
@@ -177,7 +181,7 @@ public class ExactAnchors extends Solver {
             for (AnchorEdgePackage anchorEdgePackage : anchorEdgesToAdd) {
                 for (int i = 0; i < layers[anchorEdgePackage.x()].size(); i++) {
                     AnchorEdgeNew anchorEdge = layers[anchorEdgePackage.x()].get(i);
-                    int doEdgesCross = doEdgesCross(vertexPointCombinations, anchorEdgePackage.x(), anchorEdgePackage.anchorEdge(), anchorEdge, print);
+                    int doEdgesCross = doEdgesCross(vertexPointCombinations, anchorEdgePackage.x(), anchorEdgePackage.anchorEdge(), anchorEdge, false);
                     if (doEdgesCross == 1) lastCrossingNumber++;
                     else if (doEdgesCross == -1) {
                         if (print) System.out.println(anchorEdgePackage.anchorEdge() + ", " + anchorEdge + " INFEASIBLE");
@@ -207,37 +211,11 @@ public class ExactAnchors extends Solver {
                     }
                 }
             }
-            if (feasible == 1 && lastCrossingNumber == 0) {
-                System.out.println(Arrays.toString(vertexPointCombinations));
-                System.out.println(Arrays.deepToString(layers));
-                System.out.println("Feasible " + lastCrossingNumber);
-            }
         }
 
         //System.out.println(lastCrossingNumber);
         vertexPointCombinationsOld = vertexPointCombinations.clone();
         return new int[]{lastCrossingNumber, feasible};
-    }
-
-    private int TEMP() {
-        int crossingNumber = 0;
-
-        for (int i = 0; i < graph.getNrOfEdges(); i++) {
-            Edge edge1 = graph.getEdges()[i];
-            for (int j = i + 1; j < graph.getNrOfEdges(); j++) {
-                Edge edge2 = graph.getEdges()[j];
-                int crossing = Utils.doEdgesCross(vertexPointCombinations[edge1.v1()].x(), vertexPointCombinations[edge1.v1()].y(), vertexPointCombinations[edge1.v2()].x(), vertexPointCombinations[edge1.v2()].y(),
-                        vertexPointCombinations[edge2.v1()].x(), vertexPointCombinations[edge2.v1()].y(), vertexPointCombinations[edge2.v2()].x(), vertexPointCombinations[edge2.v2()].y());
-                if (crossing == -1) {
-                    //return Integer.MAX_VALUE;
-                }
-                else if (crossing == 1) {
-                    crossingNumber++;
-                    //if (crossingNumber >= bestCrossingNumberFound) return bestCrossingNumberFound;
-                }
-            }
-        }
-        return crossingNumber;
     }
 
     private int doEdgesCross(Point[] vertexPointCombinations, int layer, AnchorEdgeNew e1, AnchorEdgeNew e2, boolean print) {
@@ -246,42 +224,38 @@ public class ExactAnchors extends Solver {
             if (print) System.out.println("-1-0");
             return -1;
         }
-        if (e2.v1() > e1.v1() && e1.v2() > e2.v2()) {
-            e1.addEdgeCausingCrossing(e2);
-            e2.addEdgeCausingCrossing(e1);
-            if (print) System.out.println("1-1");
-            return 1;
-        }
-        else if (e1.v1() > e2.v1() && e2.v2() > e1.v2()) {
-            e1.addEdgeCausingCrossing(e2);
-            e2.addEdgeCausingCrossing(e1);
-            if (print) System.out.println("1-2");
-            return 1;
-        }
-        else if (e1.v1() < 0) {
+        if (e1.v1() < 0) {
             if (e2.v1() < 0) {
-                if (Math.abs(e2.v1()) <= Math.abs(e1.v1()) && Math.abs(e2.v1()) >= Math.abs(e1.v2())) {
-                    for (Point point : vertexPointCombinations) {
-                        if (point.x() == layer && (point.y() == e2.v1() || point.y() == e2.v2())) {
-                            if (print) System.out.println("-1-1");
-                            return -1;
-                        }
+                if (e1.v1() == e2.v1()) {
+                    if ((e1.v2() < e1.v1() && e2.v2() < e1.v1()) || (e1.v2() > e1.v1() && e2.v2() > e1.v1())) {
+                        if (print) System.out.println(-1 - 10);
+                        return -1;
                     }
-                    e1.addEdgeCausingCrossing(e2);
-                    e2.addEdgeCausingCrossing(e1);
-                    if (print) System.out.println("1-3");
-                    return 1;
-                } else if (Math.abs(e2.v1()) >= Math.abs(e1.v1()) && Math.abs(e2.v1()) <= Math.abs(e1.v2())) {
-                    for (Point point : vertexPointCombinations) {
-                        if (point.x() == layer && point.y() == e2.v1() || point.y() == e2.v2()) {
-                            if (print) System.out.println("-1-2");
-                            return -1;
-                        }
+                }
+                else if (e1.v1() == e2.v2()) {
+                    if ((e1.v2() < e1.v1() && e2.v1() < e1.v1()) || (e1.v2() > e1.v1() && e2.v1() > e1.v1())) {
+                        if (print) System.out.println(-1 - 10);
+                        return -1;
                     }
-                    e1.addEdgeCausingCrossing(e2);
-                    e2.addEdgeCausingCrossing(e1);
-                    if (print) System.out.println("1-4");
-                    return 1;
+                }
+                else if (e1.v2() == e2.v1()) {
+                    if ((e1.v1() < e1.v2() && e2.v2() < e1.v2()) || (e1.v1() > e1.v2() && e2.v2() > e1.v2())) {
+                        if (print) System.out.println(-1 - 10);
+                        return -1;
+                    }
+                }
+                else if (e1.v2() == e2.v2()) {
+                    if ((e1.v1() < e1.v2() && e2.v1() < e1.v2()) || (e1.v1() > e1.v2() && e2.v1() > e1.v2())) {
+                        if (print) System.out.println(-1 - 10);
+                        return -1;
+                    }
+                }
+                else if (Math.abs(e2.v1()) < Math.abs(e1.v1()) && (Math.abs(e1.v2()) > Math.abs(e2.v1()) && Math.abs(e1.v2()) < Math.abs(e2.v2()))) {
+                    if (print) System.out.println(-1-11);
+                    return -1;
+                } else if (Math.abs(e2.v1()) > Math.abs(e1.v1()) && (Math.abs(e2.v2()) > Math.abs(e1.v2()) && Math.abs(e2.v2()) < Math.abs(e1.v1()))) {
+                    if (print) System.out.println(-1-12);
+                    return -1;
                 }
             }
             else {
@@ -294,7 +268,7 @@ public class ExactAnchors extends Solver {
                     }
                     e1.addEdgeCausingCrossing(e2);
                     e2.addEdgeCausingCrossing(e1);
-                    if (print) System.out.println("1-3");
+                    if (print) System.out.println("CROSS 1-3");
                     return 1;
                 } else if (e2.v1() > Math.abs(e1.v1()) && e2.v1() < Math.abs(e1.v2())) {
                     for (Point point : vertexPointCombinations) {
@@ -305,72 +279,110 @@ public class ExactAnchors extends Solver {
                     }
                     e1.addEdgeCausingCrossing(e2);
                     e2.addEdgeCausingCrossing(e1);
-                    if (print) System.out.println("1-4");
+                    if (print) System.out.println("CROSS 1-4");
                     return 1;
                 }
             }
         } else if (e2.v1() < 0) {
-            if (e1.v1() < 0) {
-                if (Math.abs(e1.v1()) <= Math.abs(e2.v1()) && Math.abs(e1.v1()) >= Math.abs(e2.v2())) {
-                    for (Point point : vertexPointCombinations) {
-                        if (point.x() == layer && (point.y() == e1.v1() || point.y() == e1.v2())) {
-                            if (print) System.out.println("-1-3");
-                            return -1;
-                        }
+            if (e1.v1() < Math.abs(e2.v1()) && e1.v1() > Math.abs(e2.v2())) {
+                for (Point point : vertexPointCombinations) {
+                    if (point.x() == layer && point.y() == e1.v1()) {
+                        if (print) System.out.println("-1-3");
+                        return -1;
                     }
-                    e1.addEdgeCausingCrossing(e2);
-                    e2.addEdgeCausingCrossing(e1);
-                    if (print) System.out.println("1-5");
-                    return 1;
-                } else if (Math.abs(e1.v1()) >= Math.abs(e2.v1()) && Math.abs(e1.v1()) <= Math.abs(e2.v2())) {
-                    for (Point point : vertexPointCombinations) {
-                        if (point.x() == layer && (point.y() == e2.v1() || point.y() == e1.v2())) {
-                            if (print) System.out.println("-1-4");
-                            return -1;
-                        }
+                }
+                e1.addEdgeCausingCrossing(e2);
+                e2.addEdgeCausingCrossing(e1);
+                if (print) System.out.println("CROSS 1-5");
+                return 1;
+            }
+            else if (e1.v1() > Math.abs(e2.v1()) && e1.v1() < Math.abs(e2.v2())) {
+                for (Point point : vertexPointCombinations) {
+                    if (point.x() == layer && point.y() == e2.v1()) {
+                        if (print) System.out.println("-1-4");
+                        return -1;
                     }
-                    e1.addEdgeCausingCrossing(e2);
-                    e2.addEdgeCausingCrossing(e1);
-                    if (print) System.out.println("1-6");
-                    return 1;
+                }
+                e1.addEdgeCausingCrossing(e2);
+                e2.addEdgeCausingCrossing(e1);
+                if (print) System.out.println("CROSS 1-6");
+                return 1;
+            }
+        }
+        /*else if (e1.v1() == e2.v1()) {
+            boolean isEndpoint = false;
+            for (Point point : vertexPointCombinations) {
+                if (point.x() == layer && point.y() == e1.v1()) {
+                    isEndpoint = true;
                 }
             }
-            else {
-                if (e1.v1() < Math.abs(e2.v1()) && e1.v1() > Math.abs(e2.v2())) {
-                    for (Point point : vertexPointCombinations) {
-                        if (point.x() == layer && point.y() == e1.v1()) {
-                            if (print) System.out.println("-1-3");
+            if (layer - 1 >= 0) {
+                if (isEndpoint) {
+                    for (AnchorEdgeNew edge : layers[layer - 1]) {
+                        if (edge.v2() == e1.v1() && edge.getParentEdge().equals(e1.getParentEdge())) {
+                            return -1;
+                        } else if (edge.v2() == e2.v1() && edge.getParentEdge().equals(e2.getParentEdge())) {
                             return -1;
                         }
                     }
-                    e1.addEdgeCausingCrossing(e2);
-                    e2.addEdgeCausingCrossing(e1);
-                    if (print) System.out.println("1-5");
-                    return 1;
-                } else if (e1.v1() > Math.abs(e2.v1()) && e1.v1() < Math.abs(e2.v2())) {
-                    for (Point point : vertexPointCombinations) {
-                        if (point.x() == layer && point.y() == e2.v1()) {
-                            if (print) System.out.println("-1-4");
+
+                } else {
+                    for (AnchorEdgeNew edge : layers[layer - 1]) {
+                        if (edge.v2() == e1.v1() && edge.getParentEdge().equals(e1.getParentEdge())) {
+                            if (print) System.out.println("CROSS 1-20");
+                            return 1;
+                        } else if (edge.v2() == e2.v1() && edge.getParentEdge().equals(e2.getParentEdge())) {
+                            if (print) System.out.println("CROSS 1-21");
+                            return 1;
+                        }
+                    }
+
+                }
+            }
+        }*/
+        else if (e1.v2() == e2.v2()) {
+            boolean isEndpoint = false;
+            for (Point point : vertexPointCombinations) {
+                if (point.x() == layer && point.y() == e1.v2()) {
+                    isEndpoint = true;
+                }
+            }
+            if (layer + 1 < layers.length) {
+                if (isEndpoint) {
+                    for (AnchorEdgeNew edge : layers[layer + 1]) {
+                        if (edge.v1() == e1.v2() && edge.getParentEdge().equals(e1.getParentEdge())) {
+                            if (print) System.out.println(edge.getParentEdge() + ", with " + e1.getParentEdge());
+                            return -1;
+                        } else if (edge.v1() == e2.v2() && edge.getParentEdge().equals(e2.getParentEdge())) {
+                            if (print) System.out.println(edge.getParentEdge() + ", with " + e2.getParentEdge());
                             return -1;
                         }
                     }
-                    e1.addEdgeCausingCrossing(e2);
-                    e2.addEdgeCausingCrossing(e1);
-                    if (print) System.out.println("1-6");
-                    return 1;
+
+                } else {
+                    for (AnchorEdgeNew edge : layers[layer + 1]) {
+                        if (edge.v1() == e1.v2() && edge.getParentEdge().equals(e1.getParentEdge())) {
+                            if (print) System.out.println("CROSS 1-22");
+                            return 1;
+                        } else if (edge.v1() == e2.v2() && edge.getParentEdge().equals(e2.getParentEdge())) {
+                            if (print) System.out.println("CROSS 1-23");
+                            return 1;
+                        }
+                    }
+
                 }
             }
         }
-        else if (e1.v2() == e2.v2()) {
-            for (Point point : vertexPointCombinations) {
-                if (point.x() == layer + 1 && point.y() == e1.v2()) {
-                    if (print) System.out.println("0-1");
-                    return 0;
-                }
-            }
+        else if (e2.v1() > e1.v1() && e1.v2() > e2.v2()) {
             e1.addEdgeCausingCrossing(e2);
             e2.addEdgeCausingCrossing(e1);
-            if (print) System.out.println("1-7");
+            if (print) System.out.println("CROSS 1-1");
+            return 1;
+        }
+        else if (e1.v1() > e2.v1() && e2.v2() > e1.v2()) {
+            e1.addEdgeCausingCrossing(e2);
+            e2.addEdgeCausingCrossing(e1);
+            if (print) System.out.println("CROSS 1-2");
             return 1;
         }
 
@@ -419,6 +431,11 @@ public class ExactAnchors extends Solver {
     @Override
     public String getName() {
         return getClass().getSimpleName();
+    }
+
+    @Override
+    protected double solve(int upperbound) {
+        return -1;
     }
 }
 

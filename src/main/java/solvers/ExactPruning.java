@@ -51,15 +51,19 @@ public class ExactPruning extends ExactSolver {
             vertexPointCombinations[i] = graph.getPoints()[indicesToChooseFrom.get(idx)];
             indicesToChooseFrom.remove(idx);
         }
+        Arrays.fill(pointVertexCombinations, -1);
         //System.out.println(Arrays.toString(vertexPointCombinations));
         int[] p = new int[graph.getNrOfPoints()];
         int i, j;
-        for(i = 0; i < graph.getNrOfVertices(); i++) {
-            pointVertexCombinations[i] = i;
-            p[i] = 0;
+        for (i = 0; i < vertexPointCombinations.length; i++) {
+            for (int b = 0; b < graph.getNrOfPoints(); b++) {
+                if (graph.getPoints()[b].equals(vertexPointCombinations[i])) {
+                    pointVertexCombinations[b] = i;
+                    break;
+                }
+            }
         }
-        for (i = graph.getNrOfVertices(); i < graph.getNrOfPoints(); i++) {
-            pointVertexCombinations[i] = -1;
+        for (i = 0; i < p.length; i++) {
             p[i] = 0;
         }
 
@@ -76,6 +80,7 @@ public class ExactPruning extends ExactSolver {
 
                 if (!(pointVertexCombinations[i] == -1 && pointVertexCombinations[j] == -1)) {
                     int crossingNumber = getNrOfCrossings(i, j, optimalCrossingNumber);
+                    //if (Arrays.equals(vertexPointCombinations, new Point[]{new Point(0,0), new Point(0,2), new Point(2,3), new Point(2,2), new Point(4,3), new Point(3,0), new Point(1,3), new Point(3, 4), new Point(1,1), new Point(2,4)})) System.out.println(crossingNumber);
                     if (crossingNumber < optimalCrossingNumber) {
                         optimalCrossingNumber = crossingNumber;
                         //System.out.println("New best: " + optimalCrossingNumber);
@@ -131,6 +136,7 @@ public class ExactPruning extends ExactSolver {
             Edge edge1 = graph.getEdges()[i];
             for (int j = i + 1; j < graph.getNrOfEdges(); j++) {
                 Edge edge2 = graph.getEdges()[j];
+                //System.out.println(edge1 + ", " + edge2);
                 int crossing = Utils.doEdgesCross(vertexPointCombinations[edge1.v1()].x(), vertexPointCombinations[edge1.v1()].y(), vertexPointCombinations[edge1.v2()].x(), vertexPointCombinations[edge1.v2()].y(),
                         vertexPointCombinations[edge2.v1()].x(), vertexPointCombinations[edge2.v1()].y(), vertexPointCombinations[edge2.v2()].x(), vertexPointCombinations[edge2.v2()].y());
                 if (crossing == -1) {

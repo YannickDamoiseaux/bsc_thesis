@@ -1,3 +1,4 @@
+import graph.CrossingData;
 import graph.Point;
 import solvers.*;
 import solvers.upperbound.UpperboundMetis;
@@ -9,9 +10,20 @@ import java.util.concurrent.*;
 
 public class Main {
     public static void main(String[] args) throws IOException, URISyntaxException {
+        //System.out.println(Utils.doEdgesCross(0, 0, 2, 0, 0, 0, 3, 0));
         long startTime = System.nanoTime();
-        //double bestCrossingNumber = new ExactPruning("generated/test7.json").solve();
-        double bestCrossingNumber = new UpperboundMetis("generated/test12.json", true, false).solve();
+        double bestCrossingNumber = new ExactAnchors("generated/test8.json").solve();
+        //double bestCrossingNumber = new ExactPruning("generated/test6.json").solve();
+        /*double bestCrossingNumber = -1;
+        for (int i = 0; i < 10000; i++) {
+             bestCrossingNumber = new ExactAnchors("generated/test2.json", i).solve();
+            if (bestCrossingNumber != 15) {
+                System.out.println("THIS ONE " + i);
+                break;
+            }
+        }*/
+        //double bestCrossingNumber = new UpperboundMetis("generated/test12.json", true, false).solve();
+        //double bestCrossingNumber = new UpperboundRandom("experiments/graphs/8_0.6_1.25_1/11.json", true).solve();
         //double bestCrossingNumber = new ExactPruning("generated/test10.json").solve();
         /*double bestCrossingNumber = Integer.MAX_VALUE;
         for (int i = 0; i < 10000; i++) {

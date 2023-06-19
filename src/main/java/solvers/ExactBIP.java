@@ -23,18 +23,9 @@ public class ExactBIP extends Solver {
     //private static IloCplex cplex;
 
     public double solve() {
-        /*if (cplex == null) {
-            try {
-                cplex = new IloCplex();
-                cplex.setParam(IloCplex.Param.Threads, 1);
-                cplex.setOut(null);
-            } catch (IloException e) {
-                throw new RuntimeException(e);
-            }
-        }*/
         try (IloCplex cplex = new IloCplex()) {
             cplex.setParam(IloCplex.Param.Threads, 1);
-            cplex.setOut(null);
+            //cplex.setOut(null);
             long startTime = System.nanoTime();
             IloIntVar[][] vars = new IloIntVar[graph.getNrOfVertices()][graph.getNrOfPoints()];
             for (int i = 0; i < graph.getNrOfVertices(); i++) {
@@ -99,12 +90,8 @@ public class ExactBIP extends Solver {
                 expr_1.addTerm(1, var);
                 cplex.addLe(expr_1, edgePointCombination[crossing.e1()][crossing.p1()][crossing.p2()]);
 
-                //IloLinearIntExpr expr_2 = cplex.linearIntExpr();
-                //expr_2.addTerm(1, var);
                 cplex.addLe(expr_1, edgePointCombination[crossing.e2()][crossing.p3()][crossing.p4()]);
 
-                //IloLinearIntExpr expr_3 = cplex.linearIntExpr();
-                //expr_3.addTerm(1, var);
                 IloLinearIntExpr expr_4 = cplex.linearIntExpr();
                 expr_4.addTerm(1, edgePointCombination[crossing.e1()][crossing.p1()][crossing.p2()]);
                 expr_4.addTerm(1, edgePointCombination[crossing.e2()][crossing.p3()][crossing.p4()]);
@@ -116,12 +103,35 @@ public class ExactBIP extends Solver {
                 objExpressions.add(obj_expr);
             }
 
-            for (CrossingData colinearity : colinear) {
+            for (CrossingData collinearity : colinear) {
                 if (Thread.currentThread().isInterrupted()) {
                     return Integer.MAX_VALUE;
                 }
-                IloIntVar var1 = edgePointCombination[colinearity.e1()][colinearity.p1()][colinearity.p2()];
-                IloIntVar var2 = edgePointCombination[colinearity.e2()][colinearity.p3()][colinearity.p4()];
+                IloIntVar var1;
+                if (collinearity.p1() == -1) {
+                    var1 = vars[graph.getEdges()[collinearity.e1()].v2()][collinearity.p2()];
+                }
+                else if (collinearity.p2() == -1) {
+                    var1 = vars[graph.getEdges()[collinearity.e1()].v1()][collinearity.p1()];
+                }
+                else {
+                    var1 = edgePointCombination[collinearity.e1()][collinearity.p1()][collinearity.p2()];
+                }
+
+                IloIntVar var2;
+                if (collinearity.p3() == -1) {
+                    var2 = vars[graph.getEdges()[collinearity.e2()].v2()][collinearity.p4()];
+                }
+                else if (collinearity.p4() == -1) {
+                    var2 = vars[graph.getEdges()[collinearity.e2()].v1()][collinearity.p3()];
+                }
+                else {
+                    var2 = edgePointCombination[collinearity.e2()][collinearity.p3()][collinearity.p4()];
+                }
+                //System.out.println(var1 + ", " + var2);
+
+                //IloIntVar var1 = edgePointCombination[collinearity.e1()][collinearity.p1()][collinearity.p2()];
+                //IloIntVar var2 = edgePointCombination[collinearity.e2()][collinearity.p3()][collinearity.p4()];
                 IloIntVar new_var = cplex.intVar(0, 1);
 
                 IloLinearIntExpr expr_1 = cplex.linearIntExpr();
@@ -149,7 +159,7 @@ public class ExactBIP extends Solver {
             if (timeLeft <= 0) {
                 return Integer.MAX_VALUE;
             }
-            cplex.setParam(IloCplex.Param.TimeLimit, timeLeft/1000.0);
+            //cplex.setParam(IloCplex.Param.TimeLimit, timeLeft/1000.0);
             // solve and retrieve optimal solution
             if (cplex.solve()) {
                 return cplex.getObjValue();

@@ -5,8 +5,8 @@ import graph.GraphGenerator;
 
 public class CreateRandomGraphs {
     public static void main(String[] args) {
-        int nrVertices = 110;
-        double density = 0.6;
+        int nrVertices = 20;
+        double density = 0.3;
         double resolutionPower = 1.75;
         int nrPointsMultiplier = 3;
         int size = (int) Math.pow(nrVertices, resolutionPower);

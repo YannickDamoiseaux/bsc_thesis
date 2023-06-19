@@ -13,7 +13,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class UpperboundRandom extends Upperbound {
-    private final int nrPointsPerPartition;
+    private int nrPointsPerPartition;
     private final Random rand;
     private final boolean useDistanceMetric;
 
@@ -24,14 +24,32 @@ public class UpperboundRandom extends Upperbound {
         this.rand = new Random();
         //System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
     }
+    public UpperboundRandom(String src, boolean useDistanceMetric) throws FileNotFoundException, URISyntaxException {
+        super(src);
+        this.useDistanceMetric = useDistanceMetric;
+        this.rand = new Random();
+        this.nrVerticesPerPartition = -1;
+    }
     public UpperboundRandom(int nrPointsPerPartition, boolean useDistanceMetric) {
         this.nrPointsPerPartition = nrPointsPerPartition;
         this.useDistanceMetric = useDistanceMetric;
         this.rand = new Random();
     }
+    public UpperboundRandom(boolean useDistanceMetric) {
+        this.useDistanceMetric = useDistanceMetric;
+        this.rand = new Random();
+        this.nrVerticesPerPartition = -1;
+    }
 
     @Override
     public double solve() {
+        if (nrVerticesPerPartition == -1) {
+            if (graph.getNrOfVertices() <= 29) nrVerticesPerPartition = 4;
+            else if (graph.getNrOfVertices() <= 56) nrVerticesPerPartition = 7;
+            else nrVerticesPerPartition = 10;
+
+            nrPointsPerPartition = (int) Math.ceil(graph.getNrOfPoints()/Math.ceil(graph.getNrOfVertices()/(double)nrVerticesPerPartition));
+        }
         Long startTime = System.nanoTime();
         double upperbound = Integer.MAX_VALUE;
         while (!Thread.currentThread().isInterrupted()) {
@@ -41,7 +59,7 @@ public class UpperboundRandom extends Upperbound {
             double crossingNumber = super.solve(pointPartitions, vertexPartitions, useDistanceMetric, startTime);
             if (crossingNumber < upperbound) {
                 upperbound = crossingNumber;
-                //System.out.println("New best: "+ upperbound);
+                System.out.println("New best: "+ upperbound);
                 if (upperbound == 0) return upperbound;
             }
         }
@@ -104,5 +122,5 @@ public class UpperboundRandom extends Upperbound {
     }
 
     @Override
-    public Solver newEmptyInstance() { return new UpperboundRandom(this.nrPointsPerPartition, this.useDistanceMetric); }
+    public Solver newEmptyInstance() { return new UpperboundRandom(this.useDistanceMetric); }
 }

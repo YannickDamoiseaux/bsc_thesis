@@ -14,43 +14,14 @@ import java.util.concurrent.*;
 
 public class Experiments {
     public static void main(String[] args) {
-        upperbound_2();
-        upperbound_3();
+        exact_1();
+        exact_2();
     }
 
-    private static void test() {
-        ExecutorService threadpool = Executors.newFixedThreadPool(2);
-        Solver[] solvers = {new ExactPruning(), new ExactPruningRecursive()};
-        int[] vertices = {8};
-        double[] densities = {0.6};
-        ArrayList<Callable<Object>> runnables = new ArrayList<>();
-        for (int v : vertices) {
-            for (double d : densities) {
-                for (Solver s : solvers) {
-                    runnables.add(() -> {
-                        try {
-                            runConfiguration(s, v, d, 3, 1.75, "TEST", Executors.newSingleThreadExecutor());
-                            return null;
-                        } catch (URISyntaxException | FileNotFoundException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-                }
-            }
-        }
-
-        try {
-            threadpool.invokeAll(runnables);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        threadpool.shutdown();
-    }
-
-    private static void exact_1_1() {
+    private static void exact_1() {
         ExecutorService threadpool = Executors.newFixedThreadPool(3);
-        Solver[] solvers = {new ExactPruning(), new ExactPruningNew()};
-        int[] vertices = {5, 8, 11};
+        Solver[] solvers = {new ExactAnchors(), new ExactPruning(), new ExactPruningNew()};
+        int[] vertices = {5, 8, 11, 20};
         double[] densities = {0.3, 0.6};
         ArrayList<Callable<Object>> runnables = new ArrayList<>();
         for (int v : vertices) {
@@ -76,27 +47,9 @@ public class Experiments {
         threadpool.shutdown();
     }
 
-    private static void exact_1_2() {
-    Solver[] solvers = {new ExactBIP()};
-    //int[] vertices = {5, 8, 11};
-    int[] vertices = {5};
-    double[] densities = {0.6};//{0.3, 0.6};
-    for (int v : vertices) {
-        for (double d : densities) {
-            for (Solver s : solvers) {
-                    try {
-                        runConfiguration(s, v, d, 3, 1.75, "", Executors.newSingleThreadExecutor());
-                    } catch (URISyntaxException | FileNotFoundException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        }
-    }
-
-    private static void exact_2_1() {
+    private static void exact_2() {
         ExecutorService threadpool = Executors.newFixedThreadPool(3);
-        Solver[] solvers = {new ExactPruning(), new ExactPruningNew()};
+        Solver[] solvers = {new ExactAnchors(), new ExactPruning(), new ExactPruningNew()};
         double[] resolutionPowers = {1.25, 1.75};
         int[] nrPointsMultipliers = {1, 3};
         ArrayList<Callable<Object>> runnables = new ArrayList<>();
@@ -122,26 +75,8 @@ public class Experiments {
         threadpool.shutdown();
     }
 
-    private static void exact_2_2() {
-        Solver[] solvers = {new ExactBIP()};
-        double[] resolutionPowers = {1.25, 1.75};
-        int[] nrPointsMultipliers = {1, 3};
-        for (double r : resolutionPowers) {
-            for (int p : nrPointsMultipliers) {
-                for (Solver s : solvers) {
-                    try {
-                        runConfiguration(s, 8, 0.6, p, r, "", Executors.newSingleThreadExecutor());
-                    } catch (URISyntaxException | FileNotFoundException e) {
-                        throw new RuntimeException(e);
-
-                    }
-                }
-            }
-        }
-    }
-
     private static void upperbound_1() {
-        /*UpperBoundSolver[] solvers = {new UpperboundMetis(true, true), new UpperboundMetis(true, false)};
+        UpperBoundSolver[] solvers = {new UpperboundMetis(true, true), new UpperboundMetis(true, false)};
         int[] vertices = {20, 29}; //{20, 29, 56, 83, 110};
         int[] nrVerticesPerPartition = {4, 7, 10};
         for (int v : vertices) {
@@ -154,23 +89,16 @@ public class Experiments {
                     }
                 }
             }
-        }*/
-        try {
-            runConfigurationUpperBound(new UpperboundMetis(true, false), 56, 0.6, 3, 1.75, 7, "", Executors.newSingleThreadExecutor());
-            runConfigurationUpperBound(new UpperboundMetis(true, false), 83, 0.6, 3, 1.75, 4, "", Executors.newSingleThreadExecutor());
-            runConfigurationUpperBound(new UpperboundMetis(true, true), 83, 0.6, 3, 1.75, 4, "", Executors.newSingleThreadExecutor());
-        } catch (URISyntaxException | FileNotFoundException e) {
-            throw new RuntimeException(e);
         }
     }
 
     private static void upperbound_2() {
-        Solver[] solvers = {new UpperboundMetis(true, true), new UpperboundMetis(true, false), new UpperboundRandom()};
-        int[] vertices = {5, 8, 11, 20, 29};
+        UpperBoundSolver[] solvers = {new UpperboundMetis(true, true)};//, new UpperboundMetis(true, false)};//, new UpperboundRandom(true)};
+        int[] vertices = {5, 8, 11};
         double[] densities = {0.3, 0.6};
         for (int v : vertices) {
             for (double d : densities) {
-                for (Solver s : solvers) {
+                for (UpperBoundSolver s : solvers) {
                     try {
                         runConfigurationUpperBound(s, v, d, 3, 1.75, -1, "", Executors.newSingleThreadExecutor());
                     } catch (URISyntaxException | FileNotFoundException e) {
@@ -182,12 +110,12 @@ public class Experiments {
     }
 
     private static void upperbound_3() {
-        Solver[] solvers = {new UpperboundMetis(true, true), new UpperboundMetis(true, false), new UpperboundRandom()};
+        UpperBoundSolver[] solvers = {new UpperboundMetis(true, true), new UpperboundRandom(true)};//, new UpperboundMetis(true, false)};
         double[] resolutionPowers = {1.25, 1.75};
         int[] nrPointsMultiplier = {1, 3};
         for (double r : resolutionPowers) {
             for (int p : nrPointsMultiplier) {
-                for (Solver s : solvers) {
+                for (UpperBoundSolver s : solvers) {
                     try {
                         runConfigurationUpperBound(s, 8, 0.6, p, r, -1, "", Executors.newSingleThreadExecutor());
                     } catch (URISyntaxException | FileNotFoundException e) {
@@ -245,12 +173,10 @@ public class Experiments {
                 // Wait for the result with a timeout
                 result[i] = future.get(30, TimeUnit.SECONDS).intValue();
                 time[i] = solverTemp.getExecutionTime();
-                System.out.println("First " + result[i]);
             } catch (TimeoutException e) {
                 // Execution took longer than the specified timeout
                 result[i] = (int) solverTemp.getOptimalCrossingNumber();
                 time[i] = solverTemp.getExecutionTime();
-                System.out.println("Second " + result[i]);
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             } finally {
@@ -259,7 +185,7 @@ public class Experiments {
         }
         executor.shutdown();
 
-        writeToFile(result, time, solver, nrVertices, density, resolutionPower, nrPointsMultiplier, String.valueOf(nrVerticesPerPartition));
+        writeToFile(result, time, solver, nrVertices, density, resolutionPower, nrPointsMultiplier, nrVerticesPerPartition != -1 ? String.valueOf(nrVerticesPerPartition) : extraIdentifier);
     }
 
     private static void writeToFile(int[] result, double[] time, Solver solver, int nrVertices, double density, double resolutionPower, int nrPointsMultiplier, String extraIdentifier) {
