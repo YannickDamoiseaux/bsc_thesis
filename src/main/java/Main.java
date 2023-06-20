@@ -12,7 +12,7 @@ public class Main {
     public static void main(String[] args) throws IOException, URISyntaxException {
         //System.out.println(Utils.doEdgesCross(0, 0, 2, 0, 0, 0, 3, 0));
         long startTime = System.nanoTime();
-        double bestCrossingNumber = new ExactAnchors("experiments/graphs/planar/planar_3.json").solve();
+        double bestCrossingNumber = new UpperboundRandom("experiments/graphs/11_0.3_1.75_3/16.json", true).solve();
         //double bestCrossingNumber = new ExactPruning("generated/test6.json").solve();
         /*double bestCrossingNumber = -1;
         for (int i = 0; i < 10000; i++) {
@@ -28,7 +28,7 @@ public class Main {
         /*double bestCrossingNumber = Integer.MAX_VALUE;
         for (int i = 0; i < 10000; i++) {
             System.out.println(i);
-            double crossingNumber = new UpperboundRandom("generated/test12.json", 6, i).solve();
+            double crossingNumber = new UpperboundRandom("experiments/graphs/11_0.3_1.75_3/"+i+".json", true).solve();
             if (crossingNumber < bestCrossingNumber) {
                 System.out.println("New best: " + crossingNumber + " with seed " + i);
                 bestCrossingNumber = crossingNumber;

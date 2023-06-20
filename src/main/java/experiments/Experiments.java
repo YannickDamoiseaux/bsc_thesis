@@ -15,14 +15,13 @@ import java.util.concurrent.*;
 public class Experiments {
     public static void main(String[] args) {
         exact_1();
-        exact_2();
     }
 
     private static void exact_1() {
         ExecutorService threadpool = Executors.newFixedThreadPool(2);
-        Solver[] solvers = {new ExactAnchors(), new ExactBIP()};
-        int[] vertices = {5, 8, 11, 20};
-        double[] densities = {0.3, 0.6};
+        Solver[] solvers = {new ExactAnchors()};
+        int[] vertices = {20};
+        double[] densities = {0.6};
         ArrayList<Callable<Object>> runnables = new ArrayList<>();
         for (int v : vertices) {
             for (double d : densities) {

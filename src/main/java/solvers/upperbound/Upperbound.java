@@ -94,6 +94,7 @@ public class Upperbound extends UpperBoundSolver {
 
     private int calculateNrOfCrossings(Point[] vertexPointCombinations) {
         int crossingNumber = 0;
+        System.out.println(Arrays.toString(graph.getEdges()));
 
         for (int i = 0; i < graph.getNrOfEdges(); i++) {
             Edge edge1 = graph.getEdges()[i];

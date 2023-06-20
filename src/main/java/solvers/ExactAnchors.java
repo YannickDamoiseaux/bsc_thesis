@@ -49,6 +49,7 @@ public class ExactAnchors extends ExactSolver {
         int lastCrossingNumber = result[0];
         if (result[1] != -1) {
             optimalCrossingNumber = lastCrossingNumber;
+            if (optimalCrossingNumber == 0) return 0;
         }
 
         int[] p = new int[graph.getNrOfPoints()];
