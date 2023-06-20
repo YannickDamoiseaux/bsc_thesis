@@ -19,6 +19,7 @@ public class ExactAnchors extends ExactSolver {
     private Point[] vertexPointCombinations;
     private Point[] vertexPointCombinationsOld;
     private Integer[] pointVertexCombinations;
+    private int optimalCrossingNumber = Integer.MAX_VALUE;
 
     private final Random rand = new Random(0);
 
@@ -46,7 +47,6 @@ public class ExactAnchors extends ExactSolver {
         //crossingNumberOld = calculateNumberOfCrossingStatic(vertexPointCombinations);
         int[] result = calculateNumberOfCrossingStatic(vertexPointCombinations);
         int lastCrossingNumber = result[0];
-        int optimalCrossingNumber = Integer.MAX_VALUE;
         if (result[1] != -1) {
             optimalCrossingNumber = lastCrossingNumber;
         }
@@ -96,7 +96,7 @@ public class ExactAnchors extends ExactSolver {
 
     @Override
     public Solver newEmptyInstance() {
-        return null;
+        return new ExactAnchors();
     }
 
     public int[] calculateNumberOfCrossingStatic(Point[] vertexPointCombinations) {
@@ -425,7 +425,7 @@ public class ExactAnchors extends ExactSolver {
 
     @Override
     public double getOptimalCrossingNumber() {
-        return 0;
+        return optimalCrossingNumber;
     }
 
     @Override

@@ -83,7 +83,7 @@ public class ExactPruning extends ExactSolver {
                     //if (Arrays.equals(vertexPointCombinations, new Point[]{new Point(0,0), new Point(0,2), new Point(2,3), new Point(2,2), new Point(4,3), new Point(3,0), new Point(1,3), new Point(3, 4), new Point(1,1), new Point(2,4)})) System.out.println(crossingNumber);
                     if (crossingNumber < optimalCrossingNumber) {
                         optimalCrossingNumber = crossingNumber;
-                        //System.out.println("New best: " + optimalCrossingNumber);
+                        System.out.println("New best: " + optimalCrossingNumber);
                         //System.out.println(Arrays.toString(vertexPointCombinations));
                         if (optimalCrossingNumber == 0) break;
                     }

@@ -25,7 +25,7 @@ public class ExactBIP extends Solver {
     public double solve() {
         try (IloCplex cplex = new IloCplex()) {
             cplex.setParam(IloCplex.Param.Threads, 1);
-            //cplex.setOut(null);
+            cplex.setOut(null);
             long startTime = System.nanoTime();
             IloIntVar[][] vars = new IloIntVar[graph.getNrOfVertices()][graph.getNrOfPoints()];
             for (int i = 0; i < graph.getNrOfVertices(); i++) {
@@ -159,7 +159,7 @@ public class ExactBIP extends Solver {
             if (timeLeft <= 0) {
                 return Integer.MAX_VALUE;
             }
-            //cplex.setParam(IloCplex.Param.TimeLimit, timeLeft/1000.0);
+            cplex.setParam(IloCplex.Param.TimeLimit, timeLeft/1000.0);
             // solve and retrieve optimal solution
             if (cplex.solve()) {
                 return cplex.getObjValue();

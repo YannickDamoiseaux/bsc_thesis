@@ -76,7 +76,7 @@ public class Utils {
                 }
             }
         }
-        System.out.println("SIZE " + collinear.size());
+        //System.out.println("SIZE " + collinear.size());
         //System.out.println(count_cr + " Possible crossings and " + count_co + " possible co-linearities");
         return new ArrayList[]{crossings, new ArrayList(collinear)};
     }
