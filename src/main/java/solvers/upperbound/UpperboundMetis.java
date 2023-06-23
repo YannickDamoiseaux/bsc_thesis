@@ -12,45 +12,51 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class UpperboundMetis extends Upperbound {
+    private final boolean PRINTING;
     private final boolean useDistanceMetric;
     private final boolean convexSolver;
     private static JepConfig jepConfig;
 
     private double upperbound = Integer.MAX_VALUE;
 
-    public UpperboundMetis(String src, int nrPartitions, boolean useDistanceMetric, boolean convexSolver) throws URISyntaxException, FileNotFoundException {
+    public UpperboundMetis(String src, int nrPartitions, boolean useDistanceMetric, boolean convexSolver, boolean printing) throws URISyntaxException, FileNotFoundException {
         super(src);
         this.nrPartitions = nrPartitions;
         this.useDistanceMetric = useDistanceMetric;
         this.convexSolver = convexSolver;
         this.nrVerticesPerPartition = graph.getNrOfVertices()/nrPartitions;
-        System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
+        this.PRINTING = printing;
+        if (PRINTING) System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
     }
-    public UpperboundMetis(String src, boolean useDistanceMetric, boolean convexSolver)throws URISyntaxException, FileNotFoundException {
+    public UpperboundMetis(String src, boolean useDistanceMetric, boolean convexSolver, boolean printing)throws URISyntaxException, FileNotFoundException {
         super(src);
         this.nrPartitions = -1;
         this.useDistanceMetric = useDistanceMetric;
         this.convexSolver = convexSolver;
         this.nrVerticesPerPartition = -1;
-        System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
+        this.PRINTING = printing;
+        if (PRINTING) System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
     }
     public UpperboundMetis(int nrPartitions, boolean useDistanceMetric, boolean convexSolver) {
         this.nrPartitions = nrPartitions;
         this.useDistanceMetric = useDistanceMetric;
         this.convexSolver = convexSolver;
         this.nrVerticesPerPartition = -1;
+        this.PRINTING = false;
     }
     public UpperboundMetis(boolean useDistanceMetric, boolean convexSolver, int nrVerticesPerPartition) {
         this.useDistanceMetric = useDistanceMetric;
         this.convexSolver = convexSolver;
         this.nrVerticesPerPartition = nrVerticesPerPartition;
         this.nrPartitions = -1;
+        this.PRINTING = false;
     }
     public UpperboundMetis(boolean useDistanceMetric, boolean convexSolver) {
         this.useDistanceMetric = useDistanceMetric;
         this.convexSolver = convexSolver;
         this.nrPartitions = -1;
         this.nrVerticesPerPartition = -1;
+        this.PRINTING = false;
     }
 
     @Override
@@ -138,31 +144,19 @@ public class UpperboundMetis extends Upperbound {
                     }
                     else {
                         List<Point[]> pointPartitions = bisectionPartitionNonConvex(vertexPartitions, pointsTooMuch, bool1, bool2);
-                    /*System.out.println("Solving..");
-                    System.out.print("Point partition size: ");
-                    for (int i = 0; i < pointPartitions.size(); i++) {
-                        System.out.print(pointPartitions.get(i).length + ", ");
-                    }
-                    System.out.println();
-                    System.out.print("Vertex partition size: ");
-                    for (int i = 0; i < vertexPartitions.size(); i++) {
-                        System.out.print(vertexPartitions.get(i).length + ", ");
-                    }
-                    System.out.println();*/
                         double crossingNumber = super.solve(pointPartitions, vertexPartitions, useDistanceMetric, startTime);
                         if (crossingNumber < upperbound) {
                             upperbound = crossingNumber;
                             if (upperbound == 0) return upperbound;
                         }
                     }
-                    System.out.println("Current upper bound = " + upperbound);
+                    if (PRINTING) System.out.println("Current upper bound = " + upperbound);
                 }
             }
 
             subInterp.close();
             return upperbound;
         }
-        //}
     }
 
     private ArrayList<Point[]> bisectionPartitionNonConvex(ArrayList<int[]> vertexPartitions, int[] pointsTooMuch, boolean ascendingSorting, boolean firstX) {

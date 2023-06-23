@@ -2,7 +2,6 @@ package experiments;
 
 import graph.CrossingData;
 import graph.Graph;
-import solvers.ExactBIP;
 import solvers.Utils;
 
 import java.io.*;

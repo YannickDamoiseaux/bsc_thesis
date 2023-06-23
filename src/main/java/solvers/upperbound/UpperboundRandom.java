@@ -1,44 +1,44 @@
 package solvers.upperbound;
 
-import graph.Edge;
-import graph.Graph;
 import graph.Point;
-import solvers.ExactBIP;
 import solvers.Solver;
-import solvers.Utils;
 
 import java.io.*;
 import java.net.URISyntaxException;
-import java.nio.file.Paths;
 import java.util.*;
 
 public class UpperboundRandom extends Upperbound {
+    private final boolean PRINTING;
     private int nrPointsPerPartition;
     private final Random rand;
     private final boolean useDistanceMetric;
 
-    public UpperboundRandom(String src, int nrPointsPerPartition, boolean useDistanceMetric) throws FileNotFoundException, URISyntaxException {
+    public UpperboundRandom(String src, int nrPointsPerPartition, boolean useDistanceMetric, boolean printing) throws FileNotFoundException, URISyntaxException {
         super(src);
         this.nrPointsPerPartition = nrPointsPerPartition;
         this.useDistanceMetric = useDistanceMetric;
         this.rand = new Random();
-        //System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
+        this.PRINTING = printing;
+        if (PRINTING) System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
     }
-    public UpperboundRandom(String src, boolean useDistanceMetric) throws FileNotFoundException, URISyntaxException {
+    public UpperboundRandom(String src, boolean useDistanceMetric, boolean printing) throws FileNotFoundException, URISyntaxException {
         super(src);
         this.useDistanceMetric = useDistanceMetric;
         this.rand = new Random();
         this.nrVerticesPerPartition = -1;
+        this.PRINTING = printing;
     }
     public UpperboundRandom(int nrPointsPerPartition, boolean useDistanceMetric) {
         this.nrPointsPerPartition = nrPointsPerPartition;
         this.useDistanceMetric = useDistanceMetric;
         this.rand = new Random();
+        this.PRINTING = false;
     }
     public UpperboundRandom(boolean useDistanceMetric) {
         this.useDistanceMetric = useDistanceMetric;
         this.rand = new Random();
         this.nrVerticesPerPartition = -1;
+        this.PRINTING = false;
     }
 
     @Override
@@ -59,7 +59,7 @@ public class UpperboundRandom extends Upperbound {
             double crossingNumber = super.solve(pointPartitions, vertexPartitions, useDistanceMetric, startTime);
             if (crossingNumber < upperbound) {
                 upperbound = crossingNumber;
-                System.out.println("New best: "+ upperbound);
+                if (PRINTING) System.out.println("New best: "+ upperbound);
                 if (upperbound == 0) return upperbound;
             }
         }

@@ -2,10 +2,9 @@ package solvers.notused;
 
 import graph.Edge;
 import graph.Graph;
-import graph.Point;
 import ilog.concert.*;
 import ilog.cplex.IloCplex;
-import solvers.ExactBIP;
+import solvers.ExactBLP;
 import solvers.Solver;
 
 import java.io.FileNotFoundException;
@@ -19,7 +18,7 @@ public class ExactBIPQuadratic extends Solver {
     private final Graph graph;
 
     public ExactBIPQuadratic(String src) throws URISyntaxException, FileNotFoundException {
-        this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
+        this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBLP.class.getClassLoader().getResource(src)).toURI()).toFile()));
     }
 
     public double solve() {

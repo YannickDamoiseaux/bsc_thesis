@@ -2,7 +2,6 @@ package experiments;
 
 import graph.Graph;
 import solvers.*;
-import solvers.notused.ExactPruningRecursive;
 import solvers.upperbound.UpperboundMetis;
 import solvers.upperbound.UpperboundRandom;
 
@@ -14,7 +13,7 @@ import java.util.concurrent.*;
 
 public class Experiments {
     public static void main(String[] args) {
-        exact_1();
+        upperbound_4();
     }
 
     private static void exact_1() {
@@ -48,7 +47,7 @@ public class Experiments {
 
     private static void exact_2() {
         ExecutorService threadpool = Executors.newFixedThreadPool(2);
-        Solver[] solvers = {new ExactAnchors(), new ExactBIP()};
+        Solver[] solvers = {new ExactAnchors(), new ExactBLP()};
         double[] resolutionPowers = {1.25, 1.75};
         int[] nrPointsMultipliers = {1, 3};
         ArrayList<Callable<Object>> runnables = new ArrayList<>();
@@ -125,9 +124,23 @@ public class Experiments {
         }
     }
 
+    private static void upperbound_4() {
+        UpperBoundSolver[] solvers = {new UpperboundMetis(true, true)};//, new UpperboundMetis(true, false)};//, new UpperboundRandom(true)};
+        int[] vertices = {29, 56, 83, 110, 137, 164, 191};
+        for (int v : vertices) {
+            for (UpperBoundSolver s : solvers) {
+                try {
+                    runConfigurationUpperBound(s, v, 0.6, 3, 1.75, -1, "", Executors.newSingleThreadExecutor());
+                } catch (URISyntaxException | FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
     private static void planar_exact() {
-        ExecutorService threadpool = Executors.newFixedThreadPool(3);
-        Solver[] solvers = {new ExactAnchors()};
+        ExecutorService threadpool = Executors.newFixedThreadPool(2);
+        Solver[] solvers = {new ExactBLP()};
         ArrayList<Callable<Object>> runnables = new ArrayList<>();
         for (Solver s : solvers) {
             runnables.add(() -> {

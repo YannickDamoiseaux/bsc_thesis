@@ -1,10 +1,10 @@
 package solvers.notused;
 
-import graph.AnchorEdge;
+import graph.AnchorEdgeTemp;
 import graph.Edge;
 import graph.Graph;
 import graph.Point;
-import solvers.ExactBIP;
+import solvers.ExactBLP;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -16,7 +16,7 @@ public class ExactAnchorsRounding {
     private final Graph graph;
 
     public ExactAnchorsRounding(String src) throws URISyntaxException, FileNotFoundException {
-        this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
+        this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBLP.class.getClassLoader().getResource(src)).toURI()).toFile()));
         System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
     }
 
@@ -28,7 +28,7 @@ public class ExactAnchorsRounding {
        return solveRecursively(new LinkedList<>(Arrays.asList(graph.getPoints())), vertices, new Point[graph.getNrOfVertices()], new LinkedList<>(), Integer.MAX_VALUE);
     }
 
-    LinkedList<AnchorEdge>[][] layers;
+    LinkedList<AnchorEdgeTemp>[][] layers;
     Point[] vertexPointCombinationsOld;
     int crossingNumberOld = 0;
 
@@ -87,7 +87,7 @@ public class ExactAnchorsRounding {
 
         if (verticesThatChanged.isEmpty()) {
             for (Edge edge : graph.getEdges()) {
-                AnchorEdge[][] anchorEdges = getAnchorGraphOfEdge(vertexPointCombinations, edge);
+                AnchorEdgeTemp[][] anchorEdges = getAnchorGraphOfEdge(vertexPointCombinations, edge);
                 for (int x = 0; x < graph.getWidth(); x++) {
                     for (int y = 0; y < graph.getHeight() + 1; y++) {
                         if (anchorEdges[x][y] != null) {
@@ -99,13 +99,13 @@ public class ExactAnchorsRounding {
             }
 
             for (int l = 0; l < layers.length; l++) {
-                LinkedList<AnchorEdge>[] layer = layers[l];
+                LinkedList<AnchorEdgeTemp>[] layer = layers[l];
                 for (int i = 0; i < layer.length; i++) {
                     for (int e1Idx = 0; e1Idx < layer[i].size(); e1Idx++) {
-                        AnchorEdge e1 = layer[i].get(e1Idx);
+                        AnchorEdgeTemp e1 = layer[i].get(e1Idx);
                         for (int j = i + 1; j < layer.length; j++) {
                             for (int e2Idx = 0; e2Idx < layer[j].size(); e2Idx++) {
-                                AnchorEdge e2 = layer[j].get(e2Idx);
+                                AnchorEdgeTemp e2 = layer[j].get(e2Idx);
                                 if (doEdgesCross(vertexPointCombinations, l, e1, e2)) crossingNumber++;
                             }
                         }
@@ -127,12 +127,12 @@ public class ExactAnchorsRounding {
             }
 
             //System.out.println(Arrays.toString(edgesToRemove.toArray()));
-            ArrayList<AnchorEdge[][]> anchorEdgesToAddList = new ArrayList<>();
+            ArrayList<AnchorEdgeTemp[][]> anchorEdgesToAddList = new ArrayList<>();
             //System.out.println("old combinations " + Arrays.deepToString(vertexPointCombinationsOld));
             for (Edge edge : edgesToRemove) {
-                AnchorEdge[][] anchorEdgesToRemove = getAnchorGraphOfEdge(vertexPointCombinationsOld, edge);
+                AnchorEdgeTemp[][] anchorEdgesToRemove = getAnchorGraphOfEdge(vertexPointCombinationsOld, edge);
                 //System.out.println("To remove " + edge  + ": " +Arrays.deepToString(anchorEdgesToRemove));
-                AnchorEdge[][] anchorEdgesToAdd = getAnchorGraphOfEdge(vertexPointCombinations, edge);
+                AnchorEdgeTemp[][] anchorEdgesToAdd = getAnchorGraphOfEdge(vertexPointCombinations, edge);
                 //System.out.println("To add " + edge  + ": " +Arrays.deepToString(anchorEdgesToAdd));
                 anchorEdgesToAddList.add(anchorEdgesToAdd);
                 for (int x = 0; x < graph.getWidth(); x++) {
@@ -147,7 +147,7 @@ public class ExactAnchorsRounding {
                             }
                             if (layers[x][y].get(idx).isEdgeCausingCrossing()) {
                                 crossingNumber -= layers[x][y].get(idx).getNrOfCrossingCausing();
-                                for (AnchorEdge otherEdge : layers[x][y].get(idx).getOtherEdgeCausingCrossing()) {
+                                for (AnchorEdgeTemp otherEdge : layers[x][y].get(idx).getOtherEdgeCausingCrossing()) {
                                     otherEdge.removeEdgeCausingCrossing(layers[x][y].get(idx));
                                 }
                                 //System.out.println("Removing crossing for edge " + layers[x][y].get(idx) + ". Crossing number becomes " + crossingNumber);
@@ -159,9 +159,9 @@ public class ExactAnchorsRounding {
                             layers[x][y].add(anchorEdgesToAdd[x][y]);
 
                             for (int i = 0; i < graph.getHeight()+1; i++) {
-                                LinkedList<AnchorEdge> anchorEdges = layers[x][i];
-                                for (AnchorEdge anchorEdge : anchorEdges) {
-                                    if (doEdgesCross(vertexPointCombinations, x, anchorEdgesToAdd[x][y], anchorEdge)) {
+                                LinkedList<AnchorEdgeTemp> anchorEdges = layers[x][i];
+                                for (AnchorEdgeTemp anchorEdgeTemp : anchorEdges) {
+                                    if (doEdgesCross(vertexPointCombinations, x, anchorEdgesToAdd[x][y], anchorEdgeTemp)) {
                                         crossingNumber++;
                                     }
                                 }
@@ -179,7 +179,7 @@ public class ExactAnchorsRounding {
         return 0;
     }
 
-    private boolean doEdgesCross(Point[] vertexPointCombinations, int layer, AnchorEdge e1, AnchorEdge e2) {
+    private boolean doEdgesCross(Point[] vertexPointCombinations, int layer, AnchorEdgeTemp e1, AnchorEdgeTemp e2) {
         if ((e1.v1() == 2 && e1.v2() == 2) || (e2.v1() == 2 && e2.v2() == 2)) System.out.println(e1 + ", " + e2);
         if (e2.v1() > e1.v1() && e1.v2() > e2.v2()) {
             e1.addEdgeCausingCrossing(e2);
@@ -227,8 +227,8 @@ public class ExactAnchorsRounding {
                     /*e1.addEdgeCausingCrossing(e2);
                     e2.addEdgeCausingCrossing(e1);
                     return true;*/
-                    AnchorEdge e1Next = e1;
-                    AnchorEdge e2Next = e2;
+                    AnchorEdgeTemp e1Next = e1;
+                    AnchorEdgeTemp e2Next = e2;
                     boolean findNext = true;
                     int tempLayer = layer;
                     while (findNext) {
@@ -237,9 +237,9 @@ public class ExactAnchorsRounding {
                             e2.addEdgeCausingCrossing(e1);
                             return true;
                         }
-                        AnchorEdge e1Next_temp = null;
-                        AnchorEdge e2Next_temp = null;
-                        for (AnchorEdge edge : layers[tempLayer + 1][e1Next.v2()]) {
+                        AnchorEdgeTemp e1Next_temp = null;
+                        AnchorEdgeTemp e2Next_temp = null;
+                        for (AnchorEdgeTemp edge : layers[tempLayer + 1][e1Next.v2()]) {
                             if (edge.getParentEdge().equals(e1Next.getParentEdge())) {
                                 e1Next_temp = edge;
                             } else if (edge.getParentEdge().equals(e2Next.getParentEdge())) {
@@ -261,10 +261,10 @@ public class ExactAnchorsRounding {
                     }
                     if (e1Next == null && e2Next == null) return false;
 
-                    AnchorEdge notNullEdge = e1Next == null ? e2Next : e1Next;
+                    AnchorEdgeTemp notNullEdge = e1Next == null ? e2Next : e1Next;
                     while (true) {
-                        AnchorEdge notNullEdge_temp = null;
-                        for (AnchorEdge edge : layers[tempLayer + 1][notNullEdge.v2()]) {
+                        AnchorEdgeTemp notNullEdge_temp = null;
+                        for (AnchorEdgeTemp edge : layers[tempLayer + 1][notNullEdge.v2()]) {
                             if (edge.getParentEdge().equals(notNullEdge.getParentEdge())) {
                                 notNullEdge_temp = edge;
                                 System.out.println(edge);
@@ -285,8 +285,8 @@ public class ExactAnchorsRounding {
         return false;
     }
 
-    private AnchorEdge[][] getAnchorGraphOfEdge(Point[] vertexPointCombinations, Edge edge) {
-        AnchorEdge[][] tempAnchorGraph = new AnchorEdge[graph.getWidth()][graph.getHeight()+1];
+    private AnchorEdgeTemp[][] getAnchorGraphOfEdge(Point[] vertexPointCombinations, Edge edge) {
+        AnchorEdgeTemp[][] tempAnchorGraph = new AnchorEdgeTemp[graph.getWidth()][graph.getHeight()+1];
         Point[] v = {vertexPointCombinations[edge.v1()], vertexPointCombinations[edge.v2()]};
         if (Math.abs(v[0].x()-v[1].x()) > 1) {
             //System.out.println(v[0] + ", " + v[1]);
@@ -299,21 +299,21 @@ public class ExactAnchorsRounding {
             for (int i = 1; i < (max-min); i++) {
                 int x = min+i;
                 int y = v[source].y() + (int) Math.round(coeff*i);
-                tempAnchorGraph[x-1][oldY] = new AnchorEdge(oldY, y, edge);
+                tempAnchorGraph[x-1][oldY] = new AnchorEdgeTemp(oldY, y, edge);
                 oldY = y;
             }
-            tempAnchorGraph[max-1][oldY] = new AnchorEdge(oldY, v[Math.abs(source-1)].y(), edge);
+            tempAnchorGraph[max-1][oldY] = new AnchorEdgeTemp(oldY, v[Math.abs(source-1)].y(), edge);
         }
         else {
             if (v[0].x() == v[1].x()) { // If the edge is vertical
-                if (v[0].y() == 0) tempAnchorGraph[v[0].x()][v[0].y()] = new AnchorEdge( -v[1].y(), v[0].y(), edge);
-                else if (v[1].y() == 0) tempAnchorGraph[v[0].x()][v[0].y()] = new AnchorEdge( -v[0].y(), v[1].y(), edge);
-                else tempAnchorGraph[v[0].x()][v[0].y()] = new AnchorEdge( -v[0].y(), -v[1].y(), edge);
+                if (v[0].y() == 0) tempAnchorGraph[v[0].x()][v[0].y()] = new AnchorEdgeTemp( -v[1].y(), v[0].y(), edge);
+                else if (v[1].y() == 0) tempAnchorGraph[v[0].x()][v[0].y()] = new AnchorEdgeTemp( -v[0].y(), v[1].y(), edge);
+                else tempAnchorGraph[v[0].x()][v[0].y()] = new AnchorEdgeTemp( -v[0].y(), -v[1].y(), edge);
             }
             else {
                 int min = Math.min(v[0].x(), v[1].x());
                 int source = v[0].x() == min ? 0 : 1;
-                tempAnchorGraph[min][v[source].y()] = new AnchorEdge(v[source].y(), v[Math.abs(source-1)].y(), edge);
+                tempAnchorGraph[min][v[source].y()] = new AnchorEdgeTemp(v[source].y(), v[Math.abs(source-1)].y(), edge);
             }
         }
         return tempAnchorGraph;

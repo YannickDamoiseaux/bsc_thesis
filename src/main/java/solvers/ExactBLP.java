@@ -3,10 +3,8 @@ package solvers;
 import graph.CrossingData;
 import graph.Edge;
 import graph.Graph;
-import graph.Point;
 import ilog.concert.*;
 import ilog.cplex.IloCplex;
-import jdk.jshell.execution.Util;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -14,11 +12,11 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class ExactBIP extends Solver {
-    public ExactBIP(String src) throws URISyntaxException, FileNotFoundException {
-        this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
+public class ExactBLP extends Solver {
+    public ExactBLP(String src) throws URISyntaxException, FileNotFoundException {
+        this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBLP.class.getClassLoader().getResource(src)).toURI()).toFile()));
     }
-    public ExactBIP() {}
+    public ExactBLP() {}
 
     //private static IloCplex cplex;
 
@@ -179,7 +177,7 @@ public class ExactBIP extends Solver {
 
     @Override
     public Solver newEmptyInstance() {
-        return new ExactBIP();
+        return new ExactBLP();
     }
 
     @Override

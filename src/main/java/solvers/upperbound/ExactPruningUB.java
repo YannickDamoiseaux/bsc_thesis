@@ -50,8 +50,6 @@ public class ExactPruningUB {
             }
         }
 
-        //System.out.println(Arrays.toString(vertexPointCombinations));
-
         Arrays.fill(pointVertexCombinations, -1);
 
         int[] p = new int[pointPartition.length];
@@ -63,7 +61,6 @@ public class ExactPruningUB {
                     break;
                 }
             }
-            //pointVertexCombinations[i] = verticesToChange[i];
         }
         for (i = 0; i < pointPartition.length; i++) {
             p[i] = 0;
@@ -88,8 +85,6 @@ public class ExactPruningUB {
                     int crossingNumber = getNrOfCrossings(i, j, optimalCrossingNumber);
                     if (crossingNumber < optimalCrossingNumber) {
                         optimalCrossingNumber = crossingNumber;
-                        //System.out.println("Best " + optimalCrossingNumber);
-                        //System.out.println(Arrays.toString(vertexPointCombinations));
                         optimalVertexPointCombinations = vertexPointCombinations.clone();
                         if (optimalCrossingNumber == 0) break;
                     }
@@ -140,39 +135,6 @@ public class ExactPruningUB {
         }
 
         return calculateNrOfCrossings(bestCrossingNumberFound);
-        //int nrCrossings = calculateNrOfCrossings(bestCrossingNumberFound);
-        /*if (nrCrossings == Integer.MAX_VALUE) return nrCrossings;
-        else {
-            for (Edge edge : graph.getEdges()) {
-                int outgoingEndpoint = -1;
-                if (isConvex) {
-                    if (!isVertexInPartition[edge.v1()]) {
-                        outgoingEndpoint = edge.v1();
-                    } else if (!isVertexInPartition[edge.v2()]) {
-                        outgoingEndpoint = edge.v2();
-                    } else continue;
-                }
-
-                // Through all points while an edge might cross through multiple partitions
-                for (Point[] pointPartition : pointPartitions) {
-                    if (!Arrays.equals(pointPartition, this.pointPartition)) {
-                        for (Point point : pointPartition) {
-                            if (isConvex && !point.equals(vertexPointCombinations[outgoingEndpoint])) {
-                                if (Utils.determinant(vertexPointCombinations[edge.v1()].x(), vertexPointCombinations[edge.v1()].y(), vertexPointCombinations[edge.v2()].x(), vertexPointCombinations[edge.v2()].y(),
-                                        point.x(), point.y()) == 0) {
-                                    if ((point.x() < vertexPointCombinations[edge.v1()].x() && point.x() > vertexPointCombinations[edge.v2()].x()) || (point.x() > vertexPointCombinations[edge.v1()].x() && point.x() < vertexPointCombinations[edge.v2()].x())
-                                            || (point.y() < vertexPointCombinations[edge.v1()].y() && point.y() > vertexPointCombinations[edge.v2()].y()) || (point.y() > vertexPointCombinations[edge.v1()].y() && point.y() < vertexPointCombinations[edge.v2()].y())) {
-                                        return Integer.MAX_VALUE;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            return nrCrossings;
-        }*/
     }
 
     private int calculateNrOfCrossings(int bestCrossingNumberFound) {

@@ -7,7 +7,7 @@ import ilog.concert.IloIntVar;
 import ilog.concert.IloLinearIntExpr;
 import ilog.concert.IloQuadIntExpr;
 import ilog.cplex.IloCplex;
-import solvers.ExactBIP;
+import solvers.ExactBLP;
 import solvers.Solver;
 
 import java.io.FileNotFoundException;
@@ -21,7 +21,7 @@ public class ExactILP extends Solver {
     private final Graph graph;
 
     public ExactILP(String src) throws URISyntaxException, FileNotFoundException {
-        this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
+        this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBLP.class.getClassLoader().getResource(src)).toURI()).toFile()));
     }
     public double solve() {
         try (IloCplex cplex = new IloCplex()) {

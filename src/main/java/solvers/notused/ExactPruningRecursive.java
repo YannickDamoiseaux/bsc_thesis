@@ -3,7 +3,7 @@ package solvers.notused;
 import graph.Edge;
 import graph.Graph;
 import graph.Point;
-import solvers.ExactBIP;
+import solvers.ExactBLP;
 import solvers.ExactSolver;
 import solvers.Solver;
 import solvers.Utils;
@@ -16,7 +16,7 @@ import java.util.*;
 
 public class ExactPruningRecursive extends ExactSolver {
     public ExactPruningRecursive(String src) throws URISyntaxException, FileNotFoundException {
-        this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
+        this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBLP.class.getClassLoader().getResource(src)).toURI()).toFile()));
         System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
     }
     public ExactPruningRecursive(Graph graph) {

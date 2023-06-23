@@ -3,21 +3,18 @@ package experiments;
 import graph.Edge;
 import graph.Graph;
 import graph.Point;
-import solvers.ExactBIP;
+import solvers.ExactBLP;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Scanner;
 
 public class PlanarGraphsCreation {
     public static void main(String[] args) throws URISyntaxException, IOException {
-        Scanner scanner = new Scanner(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource("planar_graphs.txt")).toURI()).toFile()));
+        Scanner scanner = new Scanner(new FileReader(Paths.get(Objects.requireNonNull(ExactBLP.class.getClassLoader().getResource("planar_graphs.txt")).toURI()).toFile()));
         int n = 6;
         Point[] points = new Point[n*n];
         for (int i = 0; i < n; i++) {

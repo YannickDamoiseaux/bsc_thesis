@@ -3,7 +3,7 @@ package solvers.upperbound;
 import graph.Edge;
 import graph.Graph;
 import graph.Point;
-import solvers.ExactBIP;
+import solvers.ExactBLP;
 import solvers.Solver;
 import solvers.UpperBoundSolver;
 import solvers.Utils;
@@ -16,7 +16,7 @@ import java.util.*;
 
 public class Upperbound extends UpperBoundSolver {
     public Upperbound(String src) throws URISyntaxException, FileNotFoundException {
-        this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
+        this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBLP.class.getClassLoader().getResource(src)).toURI()).toFile()));
     }
     public Upperbound() {};
 
@@ -39,7 +39,6 @@ public class Upperbound extends UpperBoundSolver {
         Point[] finalVertexPointAssignations = new Point[graph.getNrOfVertices()];
         ArrayList<Edge> edgesInFixedPartitions = new ArrayList<>();
         for (int i = 0; i < pointPartitions.size(); i++) {
-            //System.out.println("Partition " + (i+1) +" of " + pointPartitions.size());
             ArrayList<Edge> edgesTemp = new ArrayList<>();
             for (Edge edge : graph.getEdges()) {
                 for (int vertex : vertexPartitions.get(pointVertexPartitionsAssignation[i])) {
@@ -50,14 +49,12 @@ public class Upperbound extends UpperBoundSolver {
                 }
             }
             Edge[] edgeArray = new Edge[edgesTemp.size()+edgesInFixedPartitions.size()];
-            //Edge[] edgeArray = new Edge[edgesTemp.size()];
             for (int j = 0; j < edgesInFixedPartitions.size(); j++) {
                 edgeArray[j] = edgesInFixedPartitions.get(j);
             }
             int tempSize = edgesInFixedPartitions.size();
             for (int j = 0; j < edgesTemp.size(); j++) {
                 edgeArray[j+tempSize] = edgesTemp.get(j);
-                //edgeArray[j] = edgesTemp.get(j);
                 edgesInFixedPartitions.add(edgesTemp.get(j));
             }
 
@@ -94,7 +91,6 @@ public class Upperbound extends UpperBoundSolver {
 
     private int calculateNrOfCrossings(Point[] vertexPointCombinations) {
         int crossingNumber = 0;
-        System.out.println(Arrays.toString(graph.getEdges()));
 
         for (int i = 0; i < graph.getNrOfEdges(); i++) {
             Edge edge1 = graph.getEdges()[i];
@@ -149,7 +145,6 @@ public class Upperbound extends UpperBoundSolver {
             int optimalScore = getDistanceScore(a, edgesFromPartitionToPartition, distanceBetweenPointPartitions, Integer.MAX_VALUE);
             int[] optimalAssignation = a.clone();
 
-            //System.out.println("INITIAL " + optimalScore);
             i = 1;
             // Source: https://www.quickperm.org/quickperm.php
             while (i < a.length) {

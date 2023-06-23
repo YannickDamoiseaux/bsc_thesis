@@ -11,14 +11,19 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class ExactPruning extends ExactSolver {
-    public ExactPruning(String src) throws URISyntaxException, FileNotFoundException {
-        this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBIP.class.getClassLoader().getResource(src)).toURI()).toFile()));
-        System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
+    private final boolean PRINTING;
+    public ExactPruning(String src, boolean printing) throws URISyntaxException, FileNotFoundException {
+        this.graph = new Graph(new FileReader(Paths.get(Objects.requireNonNull(ExactBLP.class.getClassLoader().getResource(src)).toURI()).toFile()));
+        this.PRINTING = printing;
+        if (PRINTING) System.out.println("nr of vertices: " + graph.getNrOfVertices() + ", nr of points: " + graph.getNrOfPoints() + ", nr of edges: " + graph.getNrOfEdges());
     }
     public ExactPruning(Graph graph) {
         this.graph = graph;
+        this.PRINTING = false;
     }
-    public ExactPruning() {}
+    public ExactPruning() {
+        this.PRINTING = false;
+    }
 
     private Integer[] pointVertexCombinations;
     private Point[] vertexPointCombinations;
@@ -52,7 +57,7 @@ public class ExactPruning extends ExactSolver {
             indicesToChooseFrom.remove(idx);
         }
         Arrays.fill(pointVertexCombinations, -1);
-        //System.out.println(Arrays.toString(vertexPointCombinations));
+
         int[] p = new int[graph.getNrOfPoints()];
         int i, j;
         for (i = 0; i < vertexPointCombinations.length; i++) {
@@ -80,11 +85,12 @@ public class ExactPruning extends ExactSolver {
 
                 if (!(pointVertexCombinations[i] == -1 && pointVertexCombinations[j] == -1)) {
                     int crossingNumber = getNrOfCrossings(i, j, optimalCrossingNumber);
-                    //if (Arrays.equals(vertexPointCombinations, new Point[]{new Point(0,0), new Point(0,2), new Point(2,3), new Point(2,2), new Point(4,3), new Point(3,0), new Point(1,3), new Point(3, 4), new Point(1,1), new Point(2,4)})) System.out.println(crossingNumber);
                     if (crossingNumber < optimalCrossingNumber) {
                         optimalCrossingNumber = crossingNumber;
-                        System.out.println("New best: " + optimalCrossingNumber);
-                        //System.out.println(Arrays.toString(vertexPointCombinations));
+                        if (PRINTING) {
+                            System.out.println("New best: " + optimalCrossingNumber);
+                            System.out.println("Corresponding points assigned to vertices: " + Arrays.toString(vertexPointCombinations));
+                        }
                         if (optimalCrossingNumber == 0) break;
                     }
                 }
@@ -136,7 +142,6 @@ public class ExactPruning extends ExactSolver {
             Edge edge1 = graph.getEdges()[i];
             for (int j = i + 1; j < graph.getNrOfEdges(); j++) {
                 Edge edge2 = graph.getEdges()[j];
-                //System.out.println(edge1 + ", " + edge2);
                 int crossing = Utils.doEdgesCross(vertexPointCombinations[edge1.v1()].x(), vertexPointCombinations[edge1.v1()].y(), vertexPointCombinations[edge1.v2()].x(), vertexPointCombinations[edge1.v2()].y(),
                         vertexPointCombinations[edge2.v1()].x(), vertexPointCombinations[edge2.v1()].y(), vertexPointCombinations[edge2.v2()].x(), vertexPointCombinations[edge2.v2()].y());
                 if (crossing == -1) {
